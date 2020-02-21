@@ -255,6 +255,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>The capture payment response.</returns>
         public CapturePaymentTerminalDeviceResponse CapturePayment(CapturePaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: CapturePayment");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -273,6 +274,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>The void payment response.</returns>
         public VoidPaymentTerminalDeviceResponse VoidPayment(VoidPaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: VoidPayment");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -291,6 +293,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>The refund payment response.</returns>
         public RefundPaymentTerminalDeviceResponse RefundPayment(RefundPaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: RefundPayment");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -308,6 +311,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>The fetch token response.</returns>
         public FetchTokenPaymentTerminalDeviceResponse FetchToken(FetchTokenPaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: FetchToken");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -324,6 +328,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <param name="request">The end transaction request.</param>
         public void EndTransaction(EndTransactionPaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: EndTransaction");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -338,6 +343,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <param name="request">The close payment terminal request.</param>
         public void Close(ClosePaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: Close");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -352,6 +358,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <param name="request">The cancel operation request.</param>
         public void CancelOperation(CancelOperationPaymentTerminalDeviceRequest request)
         {
+            WriteLog("Entered method: CancelOperation");
             if (request == null)
             {
                 throw new ArgumentNullException("request");
@@ -477,7 +484,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 WriteLog("Entered method: AuthorizePaymentAsync", true);
 
                 //return _helper.PostXMLData(Helper.RequestType.Authorize, DateTime.UtcNow, "Clerk123", request.IsManualEntry, "TRNX234", request.Currency, request.Amount.ToString());
-                string urlwithPortAndPath = "http://127.0.0.1:8900/Capture";//_config.EndPointIp + destinationPath;
+                string urlwithPortAndPath = "http://localhost:8900/Capture";//_config.EndPointIp + destinationPath;
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlwithPortAndPath);
                 byte[] bytes;
                 string _xmlString = BuildSampleCardRequestXML();
@@ -490,6 +497,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 requestStream.Close();
 
                 HttpWebResponse response;
+                WriteLog($"Placeholder before GetResponse call ");
                 response = (HttpWebResponse)request.GetResponse();
                 WriteLog($"HTTP Response status code :{response.StatusCode}");
                 if (response.StatusCode == HttpStatusCode.OK)
@@ -502,7 +510,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
             catch (Exception ex)
             {
-                WriteLog($"Exception in : AuthorizePaymentAsync .InnerException :{ex.InnerException},{ex.Message}");
+                WriteLog($"Exception in : AuthorizePaymentAsync .InnerException :{ex.InnerException},Message{ex.Message},StackTrace:{ex.StackTrace},Ex Type:{ex.GetType()}");
                 var paymentTerminalPipeline = new PaymentTerminalPipeline(string.Format("{0}{1}", PaymentTerminalDevice, PaymentTerminalMessageHandler.Error));
                 paymentTerminalPipeline.SendError(ex.Message);
                 throw;
@@ -520,6 +528,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can be awaited until the begin transaction screen is displayed.</returns>
         public async Task BeginTransactionAsync(PSDK.PaymentProperty[] merchantProperties, string paymentConnectorName, string invoiceNumber, bool isTestMode)
         {
+            WriteLog("Entered method: BeginTransactionAsync");
             var beginTransactionTask = Task.Factory.StartNew(() =>
             {
                 this.merchantProperties = merchantProperties;
@@ -561,6 +570,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can await until the settlement has completed.</returns>
         public Task<PaymentInfo> CapturePaymentAsync(decimal amount, string currency, PSDK.PaymentProperty[] paymentProperties, ExtensionTransaction extensionTransactionProperties)
         {
+            WriteLog("Entered method: CapturePaymentAsync");
             try
             {
                 dynamic info = new JObject();
@@ -604,6 +614,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
             catch (Exception ex)
             {
+                WriteLog($"Exception in CapturePaymentAsync with message :{ex.Message}, inner exception :{ex.InnerException}, stacktrace :{ex.StackTrace}");
                 var paymentTerminalPipeline = new PaymentTerminalPipeline(string.Format("{0}{1}", PaymentTerminalDevice, PaymentTerminalMessageHandler.Error));
                 paymentTerminalPipeline.SendError(ex.Message);
                 throw;
