@@ -481,7 +481,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlwithPortAndPath);
                 byte[] bytes;
                 string _xmlString = BuildSampleCardRequestXML();
-                bytes = System.Text.Encoding.ASCII.GetBytes(_xmlString);
+                bytes = System.Text.Encoding.ASCII.GetBytes(_xmlString);//
                 request.ContentType = "text/xml; encoding='utf-8'";
                 request.ContentLength = bytes.Length;
                 request.Method = "POST";
