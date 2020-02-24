@@ -36,6 +36,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities">
+      <HintPath>..\..\..\References\Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities.9.17.19308.3\lib\netstandard2.0\Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>

@@ -18,9 +18,22 @@ namespace Hardware.Extension.EPSPaymentConnector.Tests
             EPSConnector _connector = new EPSConnector();
 
             //Act
-
+            var xmlString=_connector.BuildSampleCardRequestXML();
             //Assert
-            Assert.Fail();
+            Assert.IsTrue(xmlString.Length > 0);
+        }
+
+        [TestMethod()]
+        public void ParseXMLDataTest()
+        {
+            //Arrange
+            EPSConnector _connector = new EPSConnector();
+            string xmlResponseString = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><CardServiceResponse xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\" RequestType = \"CardPayment\" WorkstationID = \"Dave's Workstation\" RequestID = \"19\" OverallResult = \"Success\"><Terminal TerminalID = \"02052317\" TerminalBatch = \"006\"/><Tender><TotalAmount> 9.000000 </TotalAmount><Authorisation AcquirerID = \"000000\" StartDate = \"0401\" ExpiryDate = \"1412\" TimeStamp = \"2012-07-25T15:02:59.000+01:00\" ActionCode = \"000\" ApprovalCode = \"011860\" AcquirerBatch = \"006\" PANprint = \"541333******0036\" Merchant = \"2100112192\" AuthorisationType = \"Online\" CaptureReference = \"0092\"/></Tender></CardServiceResponse >";
+
+            //Act
+            var paymentInfo = _connector.MapCardPaymentResponse(xmlResponseString);
+            //Assert
+            Assert.IsNotNull(paymentInfo);
         }
     }
 }
