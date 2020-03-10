@@ -26,6 +26,7 @@ namespace Hardware.Extension.EPSPaymentConnector
     using System.Net;
     using System.IO;
     using System.Xml;
+    using System.Net.Sockets;
 
     /// <summary>
     /// <c>Simulator</c> manager payment device class.
@@ -51,6 +52,9 @@ namespace Hardware.Extension.EPSPaymentConnector
         private string paymentConnectorName;
         private TenderInfo tenderInfo;
         private PSDK.IPaymentProcessor processor;
+
+        private RequestBuilder requestBuilder=new RequestBuilder();
+        private ResponseMapper responseMapper=new ResponseMapper();
         
         #region ctor
         public EPSConnector()
@@ -484,30 +488,11 @@ namespace Hardware.Extension.EPSPaymentConnector
                 #endregion
                 WriteLog("Entered method: AuthorizePaymentAsync", true);
 
-                //return _helper.PostXMLData(Helper.RequestType.Authorize, DateTime.UtcNow, "Clerk123", request.IsManualEntry, "TRNX234", request.Currency, request.Amount.ToString());
-                string urlwithPortAndPath = "http://127.0.0.1:8900/Capture";//_config.EndPointIp + destinationPath;
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(urlwithPortAndPath);
-                byte[] bytes;
-                string _xmlString = BuildSampleCardRequestXML();
-                bytes = System.Text.Encoding.ASCII.GetBytes(_xmlString);//
-                request.ContentType = "text/xml; encoding='utf-8'";
-                request.ContentLength = bytes.Length;
-                request.Method = "POST";
-                Stream requestStream = request.GetRequestStream();
-                requestStream.Write(bytes, 0, bytes.Length);
-                requestStream.Close();
-
-                HttpWebResponse response;
-                WriteLog($"Placeholder before GetResponse call ");
-                response = (HttpWebResponse)request.GetResponse();
-                WriteLog($"HTTP Response status code :{response.StatusCode}");
-                if (response.StatusCode == HttpStatusCode.OK)
+                string xmlString = requestBuilder.BuildPaymentRequest(paymentRequest);
+                var response = SendStringRequest(xmlString);
+                if (response!=null)
                 {
-                    WriteLog($"HTTP Response status code :{response.StatusCode}");
-                    Stream responseStream = response.GetResponseStream();
-                    string responseStr = new StreamReader(responseStream).ReadToEnd();
-                    paymentInfo = MapCardPaymentResponse(responseStr);
-                    WriteLog($"Response :{responseStr}");
+                    //Parse response and return to the caller
                 }
             }
             catch (Exception ex)
@@ -519,68 +504,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
             return paymentInfo;
         }
-
-        public PaymentInfo MapCardPaymentResponse(string responseStr)
-        {
-            PaymentInfo paymentInfo = new PaymentInfo {
-                IsApproved=false
-            };
-
-           // var xmlRequest = BuildSampleCardRequestXML();
-            var xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(responseStr);
-
-           
-            XmlNodeList cardServiceResponseNode = xmlDoc.GetElementsByTagName("CardServiceResponse");
-            string requestType = cardServiceResponseNode[0].Attributes["RequestType"].Value;
-            string workstationID = cardServiceResponseNode[0].Attributes["WorkstationID"].Value;
-            string requestID = cardServiceResponseNode[0].Attributes["RequestID"].Value;
-            string overallResult = cardServiceResponseNode[0].Attributes["OverallResult"].Value;
-
-            var terminalNode = xmlDoc.GetElementsByTagName("Terminal");
-            string terminalID = terminalNode[0].Attributes["TerminalID"].Value;
-            string terminalBatch = terminalNode[0].Attributes["TerminalBatch"].Value;
-
-            var tenderNode = xmlDoc.GetElementsByTagName("Tender");
-
-            var totalAmountNode = xmlDoc.GetElementsByTagName("TotalAmount");
-            string totalAmount = totalAmountNode[0].InnerText;
-
-            var authorisationNode = xmlDoc.GetElementsByTagName("Authorisation");
-            string acquirerID = authorisationNode[0].Attributes["AcquirerID"].Value;
-            string startDate = authorisationNode[0].Attributes["StartDate"].Value;
-            string expiryDate = authorisationNode[0].Attributes["ExpiryDate"].Value;
-            string timeStamp = authorisationNode[0].Attributes["TimeStamp"].Value;
-
-            #region Different Action codes as per EPS doc
-            // '004' is undefined by IFSF so should be treated as a decline.   
-            //'000' Approved 
-            //'001' Honour, with Identification Approved 
-            //'002' Approved for partial amount Approved 
-            //'003' Approved(VIP) Approved 
-            //'005' Approved, account type specified by card issuer 
-            //'006' Approved for partial amount, account Approved 
-            //'007' Approved, update ICC Approved
-            #endregion
-
-            string actionCode = authorisationNode[0].Attributes["ActionCode"].Value;
-            string approvalCode = authorisationNode[0].Attributes["ApprovalCode"].Value;
-            string acquirerBatch = authorisationNode[0].Attributes["AcquirerBatch"].Value;
-            string panprint = authorisationNode[0].Attributes["PANprint"].Value;
-            string merchant = authorisationNode[0].Attributes["Merchant"].Value;
-            string authorisationType = authorisationNode[0].Attributes["AuthorisationType"].Value;
-            string captureReference = authorisationNode[0].Attributes["CaptureReference"].Value;
-
-            if (overallResult.Equals(OverallResult.Success))
-                paymentInfo.IsApproved = true;
-               
-            return paymentInfo;
-        }
-        enum OverallResult
-        {
-            Success,
-            CommunicationError
-        }
+       
         enum EpsRequestType
         {
             CardPayment,
@@ -1278,14 +1202,54 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
         }
 
-        public string BuildSampleCardRequestXML()
+        public string SendStringRequest( string message)
         {
-            // string sampleXmlAsString1 = "<?xml version=\"1.0\"?> <CardServiceRequest xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"CardPayment\"  WorkstationID=\"Dave's Workstation\" RequestID=\"19\"> <POSdata> <POSTimeStamp>2020-02-05T15:02:59.6303603+01:00</POSTimeStamp> <ManualPAN>false</ManualPAN> </POSdata> < TotalAmount Currency = \"GBP\" > 9 </ TotalAmount > </ CardServiceRequest >";
+            //TODO: Move this to configuration settings
+            string hostname= "127.0.0.1";
+            int port = 8900;
 
-            //{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}
-            string sampleXmlAsString = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"CardPayment\" WorkstationID=\"TestPos\" RequestID=\"2\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN> false </ManualPAN> <TransactionNumber> TXNDEMONo5 </TransactionNumber>   </POSdata>   <TotalAmount Currency=\"GBP\"> 7 </TotalAmount> </CardServiceRequest>";
+            try
+            {
+                WriteLog($"Entered SendStringRequest ");
+                byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                byte[] dataLength = System.Text.Encoding.ASCII.GetBytes(data.Length.ToString());
 
-            return sampleXmlAsString;
+                TcpClient client = new TcpClient(hostname, port);
+                NetworkStream stream = client.GetStream();
+                BinaryWriter writer = new BinaryWriter(stream);
+                var hosttoAddress = IPAddress.HostToNetworkOrder(data.Length);
+                
+                writer.Write(hosttoAddress);
+                writer.Write(data);
+                data = new byte[512];
+
+                // String to store the response ASCII representation.
+                string responseData = string.Empty;
+                WriteLog($"Calling stream.Read in  SendStringRequest with data");
+                Int32 bytes = stream.Read(data, 0, data.Length);
+                responseData = System.Text.Encoding.ASCII.GetString(data, 4, (bytes - 4));
+                WriteLog($"Response message is :{responseData}");
+               
+                // Close everything.
+                stream.Close();
+                client.Close();
+                return responseData;
+            }
+            catch (ArgumentNullException nullexc)
+            {
+                WriteLog($"ArgumentNullException in SendStringRequest : {nullexc.StackTrace},{nullexc.Message}");
+                return "null";
+            }
+            catch (SocketException socketexc)
+            {
+                WriteLog($"SocketException in SendStringRequest : {socketexc.StackTrace}, {socketexc.Message}.Check that device external device is connected and TransaxEFT service is up and running");
+                return "null";
+            }
+            catch (Exception exc)
+            {
+                WriteLog($"Exception in SendStringRequest : {exc.StackTrace},{exc.Message}");
+                return "null";
+            }
         }
         #endregion
 
