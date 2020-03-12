@@ -43,6 +43,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
             catch(Exception ex)
             {
+                //TODO: write this in EventViewer as error?
                 throw;
             }
         }

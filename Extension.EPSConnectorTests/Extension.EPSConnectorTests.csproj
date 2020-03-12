@@ -36,9 +36,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Dynamics.Commerce.HardwareStation.PeripheralRequests, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\References\Microsoft.Dynamics.Commerce.HardwareStation.PeripheralRequests.9.17.19308.3\lib\netstandard2.0\Microsoft.Dynamics.Commerce.HardwareStation.PeripheralRequests.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities">
       <HintPath>..\..\..\References\Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities.9.17.19308.3\lib\netstandard2.0\Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Dynamics.Retail.PaymentSDK.Portable, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
     <Reference Include="System" />
   </ItemGroup>
   <Choose>

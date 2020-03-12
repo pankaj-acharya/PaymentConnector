@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Dynamics.Commerce.HardwareStation;
 
 namespace Hardware.Extension.EPSPaymentConnector.Tests
 {
@@ -36,10 +37,11 @@ namespace Hardware.Extension.EPSPaymentConnector.Tests
             var requestXML = requestBuilder.BuildSampleCardRequestXML();
 
             //Act
-            var response = _connector.SendStringRequest("127.0.0.1", 8900, requestXML);
+            var response = _connector.SendRequestTcp(requestXML);
 
             //Assert
             Assert.IsNotNull(response);
         }
+       
     }
 }
