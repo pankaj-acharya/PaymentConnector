@@ -368,7 +368,8 @@ namespace Hardware.Extension.EPSPaymentConnector
                 throw new ArgumentNullException("request");
             }
 
-            Utilities.WaitAsyncTask(() => this.CancelOperationAsync());
+            // Utilities.WaitAsyncTask(() => this.CancelOperationAsync());
+            CancelOperationAsync();
         }
 
         /// <summary>
@@ -507,12 +508,6 @@ namespace Hardware.Extension.EPSPaymentConnector
             return paymentInfo;
         }
        
-        enum EpsRequestType
-        {
-            CardPayment,
-            PaymentRefund,
-            AbortRequest
-        } 
         /// <summary>
         ///  Begins the transaction.
         /// </summary>
@@ -550,9 +545,29 @@ namespace Hardware.Extension.EPSPaymentConnector
         ///  Cancels an existing GetTender or RequestTenderApproval  operation on the payment terminal.
         /// </summary>
         /// <returns>A task that can be awaited until the operation is cancelled.</returns>
-        public async Task CancelOperationAsync()
+        //public async Task CancelOperationAsync()
+        public void  CancelOperationAsync()
         {
-            await Task.Delay(TaskDelayInMilliSeconds);
+            //await Task.Delay(TaskDelayInMilliSeconds);
+            Logger.WriteLog("Entered method: CancelOperationAsync");
+            try
+            {
+                var xmlString = requestBuilder.BuildCancelPaymentRequest(terminalSettings.TerminalId);
+                Logger.WriteLog($"Raw AuthorizePaymentrequest XML: {xmlString}", true);
+
+                var response = SendRequestTcp(xmlString);
+
+                if(response != null)
+                {
+                    var paymentInfo = responseMapper.MapVoidResponse(response);
+                    //TODO: does this need to be logged somewhere ?
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLog($"Exception in CancelOperationAsync with message :{ex.Message}, inner exception :{ex.InnerException}, stacktrace :{ex.StackTrace}");
+            }
+
         }
 
         /// <summary>
@@ -622,6 +637,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can be awaited until the connection is closed.</returns>
         public async Task CloseAsync()
         {
+            Logger.WriteLog("Entered method: CloseAsync");
             await Task.Delay(TaskDelayInMilliSeconds);
         }
 
@@ -631,6 +647,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can be awaited until the end transaction screen is displayed.</returns>
         public async Task EndTransactionAsync()
         {
+            Logger.WriteLog("Entered method: EndTransactionAsync");
             await Task.Delay(TaskDelayInMilliSeconds);
         }
 
@@ -642,6 +659,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can await until the token generation has completed.</returns>
         public async Task<PaymentInfo> FetchTokenAsync(bool isManualEntry, ExtensionTransaction extensionTransactionProperties)
         {
+            Logger.WriteLog("Entered method: FetchTokenAsync");
             PaymentInfo paymentInfo = new PaymentInfo();
 
             // Get tender
@@ -684,6 +702,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         [Obsolete("This method will be removed once IPaymentDevice is deprecated.")]
         public async Task OpenAsync(string peripheralName, SettingsInfo terminalSettings, IDictionary<string, string> deviceConfig)
         {
+            Logger.WriteLog("Entered method: OpenAsync(string,SettingsInfo,IDictionary)");
             await Task.Delay(TaskDelayInMilliSeconds);
         }
 
@@ -696,6 +715,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can be awaited until the connection is opened.</returns>
         public async Task OpenAsync(string peripheralName, SettingsInfo terminalSettings, Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.PeripheralConfiguration deviceConfig)
         {
+            Logger.WriteLog("Entered method: OpenAsync(string,SettingsInfo,PeripheralConfiguration)");
             var openTask = Task.Factory.StartNew(() =>
             {
                 this.terminalSettings = terminalSettings;
@@ -735,6 +755,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         //public async Task<PaymentInfo> RefundPaymentAsync(decimal amount, string currency, bool isManualEntry, ExtensionTransaction extensionTransactionProperties)
         public async Task<PaymentInfo> RefundPaymentAsync(RefundPaymentTerminalDeviceRequest request)
         {
+            Logger.WriteLog("Entered method: RefundPaymentAsync");
             try
             {
                 var paymentInfo = new PaymentInfo();
@@ -821,6 +842,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can be awaited until the text is displayed on the screen.</returns>
         public async Task UpdateLineItemsAsync(string totalAmount, string taxAmount, string discountAmount, string subTotalAmount, IEnumerable<ItemInfo> items)
         {
+            Logger.WriteLog("Entered method: UpdateLineItemsAsync");
             var updateLineItemsTask = Task.Factory.StartNew(() =>
             {
                 dynamic info = new JObject();
@@ -851,6 +873,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <returns>A task that can await until the void has completed.</returns>
         public Task<PaymentInfo> VoidPaymentAsync(decimal amount, string currency, PSDK.PaymentProperty[] paymentProperties, ExtensionTransaction extensionTransactionProperties)
         {
+            Logger.WriteLog("Entered method: VoidPaymentAsync");
             try
             {
                 dynamic info = new JObject();
@@ -971,6 +994,7 @@ namespace Hardware.Extension.EPSPaymentConnector
 
         private async Task<TenderInfo> FetchTenderInfoAsync()
         {
+            Logger.WriteLog("Entered method: FetchTenderInfoAsync");
             TenderInfo tenderInfo = await this.FillTenderInfo();
 
             // Show processing info here...
@@ -1203,7 +1227,6 @@ namespace Hardware.Extension.EPSPaymentConnector
             //TODO: Move this to configuration settings
             string hostname= "127.0.0.1";
             int port = 8900;
-
             try
             {
                 Logger.WriteLog($"Entered SendRequestTcp ");
@@ -1229,6 +1252,10 @@ namespace Hardware.Extension.EPSPaymentConnector
                 // Close everything.
                 stream.Close();
                 client.Close();
+
+                //listen on port 9900
+                SocketListener.StartServer();
+
                 return responseData;
             }
             catch (ArgumentNullException nullexc)
