@@ -176,6 +176,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DeviceComsHandler.cs" />
     <Compile Include="EPSConnector.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Logger.cs" />

@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DeviceRequest xmlns="http://www.nrf-arts.org/IXRetail/namespace" RequestType="Output" ApplicationSender="EPS" RequestID="60">
+    <Output OutDeviceTarget="CashierDisplay" Immediate="true">
+        <TextLine>transaction authorising online</TextLine>
+    </Output>
+</DeviceRequest><?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DeviceRequest xmlns="http://www.nrf-arts.org/IXRetail/namespace" RequestType="Output" ApplicationSender="EPS" RequestID="61">
+    <Output OutDeviceTarget="CashierDisplay" Immediate="true">
+        <TextLine>transaction authorising offline post comms</TextLine>
+    </Output>
+</DeviceRequest><?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DeviceRequest xmlns="http://www.nrf-arts.org/IXRetail/namespace" RequestType="Output" ApplicationSender="EPS" RequestID="62">
+    <Output OutDeviceTarget="PrinterReceipt" Immediate="true">
+        <TextLine>FIS_TYPE=MerchantReceipt</TextLine>
+        <TextLine>APPLICATION_IDENTIFIER=A0000000041010</TextLine>
+        <TextLine>BATCH_ID=004</TextLine>
+        <TextLine>CARD_ACCEPTOR_NAME=</TextLine>
+        <TextLine>CARD_ACCEPTOR=6571293</TextLine>
+        <TextLine>CARD_ACCOUNT=</TextLine>
+        <TextLine>CARD_BALANCE_AMOUNT_STRING=</TextLine>
+        <TextLine>CARD_BALANCE_AMOUNT=</TextLine>
+        <TextLine>CARD_BALANCE_CURRENCY_CODE=</TextLine>
+        <TextLine>CARD_BALANCE_CURRENCY_NAME=</TextLine>
+        <TextLine>CARD_BALANCE_CURRENCY=</TextLine>
+        <TextLine>CARD_ENTRY=CTLS</TextLine>
+        <TextLine>CARD_EXPIRY=2512</TextLine>
+        <TextLine>CARD_ISSUE=01</TextLine>
+        <TextLine>CARD_PAN_TOKEN=</TextLine>
+        <TextLine>CARD_PAN=************4012</TextLine>
+        <TextLine>CARD_REPORTED_NAME=Combo01 v1 1</TextLine>
+        <TextLine>CARD_SCHEME=Combo01 v1 1</TextLine>
+        <TextLine>CARD_START=0401</TextLine>
+        <TextLine>CASHBACK_AMOUNT_STRING=</TextLine>
+        <TextLine>CASHBACK_AMOUNT=</TextLine>
+        <TextLine>CHARITY_AMOUNT_STRING=</TextLine>
+        <TextLine>CHARITY_AMOUNT=</TextLine>
+        <TextLine>CHARITY_LINE1=</TextLine>
+        <TextLine>CHARITY_LINE2=</TextLine>
+        <TextLine>CHARITY_LINE3=</TextLine>
+        <TextLine>CHARITY_LINE4=</TextLine>
+        <TextLine>CHARITY=</TextLine>
+        <TextLine>CONTACTLESS_AVAIL_OFFLINE_SPEND_STRING=</TextLine>
+        <TextLine>CONTACTLESS_AVAIL_OFFLINE_SPEND=</TextLine>
+        <TextLine>COUNTRY_CODE=826</TextLine>
+        <TextLine>CURRENCY_CODE=826</TextLine>
+        <TextLine>CURRENCY_LONG_NAME=Pound Sterling</TextLine>
+        <TextLine>CURRENCY_NAME=GBP</TextLine>
+        <TextLine>CUSTOMER_PRESENT=Y</TextLine>
+        <TextLine>CVM_TEXT=NO_CVM_REQUIRED</TextLine>
+        <TextLine>EMV_ADD_TERM_CAPS=7000B0A001</TextLine>
+        <TextLine>EMV_AIP=1980</TextLine>
+        <TextLine>EMV_ATC=0001</TextLine>
+        <TextLine>EMV_AUC=FFC0</TextLine>
+        <TextLine>EMV_AVN_ICC=0002</TextLine>
+        <TextLine>EMV_AVN_TERM=0002</TextLine>
+        <TextLine>EMV_CAPX_IDX=FA</TextLine>
+        <TextLine>EMV_CVM_LIST=000000000000000042035E031F03</TextLine>
+        <TextLine>EMV_CVM_RES=1F0302</TextLine>
+        <TextLine>EMV_FLOOR_LIMIT=00000BB8</TextLine>
+        <TextLine>EMV_IAD=0110A00000000000000000000000000000FF0000000000000000000000000000</TextLine>
+        <TextLine>EMV_TERM_CAPS=E0B8C8</TextLine>
+        <TextLine>EMV_TRANSACTION_CRYPTOGRAM_TYPE=ARQC</TextLine>
+        <TextLine>EMV_TRANSACTION_CRYPTOGRAM=2153597F31A94ADF</TextLine>
+        <TextLine>EMV_TSI=E800</TextLine>
+        <TextLine>EMV_TVR=0000000001</TextLine>
+        <TextLine>EMV_UNPRED_NO=9CBD0E5C</TextLine>
+        <TextLine>EPS_IS_AUTHORISED=true</TextLine>
+        <TextLine>EPS_IS_CANCELLED=</TextLine>
+        <TextLine>EPS_IS_DECLINED=</TextLine>
+        <TextLine>FIS_APACS_CODE=Y3</TextLine>
+        <TextLine>FIS_IFSF_ACTION_CODE=000</TextLine>
+        <TextLine>FIS_RECEIPT_NUMBER=</TextLine>
+        <TextLine>FIS_RESP_TEXT=</TextLine>
+        <TextLine>FOOTER=</TextLine>
+        <TextLine>GRATUITY_AMOUNT_STRING=</TextLine>
+        <TextLine>GRATUITY_AMOUNT=</TextLine>
+        <TextLine>HEADER=</TextLine>
+        <TextLine>HOST_RESP_TEXT=</TextLine>
+        <TextLine>POS_ID=TestPos</TextLine>
+        <TextLine>TERMINAL_ID=32793519</TextLine>
+        <TextLine>TRANSACTION_AMOUNT_STRING=£10.00</TextLine>
+        <TextLine>TRANSACTION_AMOUNT=10.00</TextLine>
+        <TextLine>TRANSACTION_AUTHCODE=10660</TextLine>
+        <TextLine>TRANSACTION_CURRENCY=£</TextLine>
+        <TextLine>TRANSACTION_DATA_SOURCE=CTLS</TextLine>
+        <TextLine>TRANSACTION_DATE=2020-03-29</TextLine>
+        <TextLine>TRANSACTION_DCC_COMMISSION_FEE=</TextLine>
+        <TextLine>TRANSACTION_DCC_COMMISSION_PERCENT=</TextLine>
+        <TextLine>TRANSACTION_DCC_CONVERSION_RATE=</TextLine>
+        <TextLine>TRANSACTION_DCC_MARKUP_FEE=</TextLine>
+        <TextLine>TRANSACTION_DCC_MARKUP_PERCENT=</TextLine>
+        <TextLine>TRANSACTION_DCC_OFFER_CURRENCY_CODE=</TextLine>
+        <TextLine>TRANSACTION_DCC_OFFER_CURRENCY_LONG_NAME=</TextLine>
+        <TextLine>TRANSACTION_DCC_OFFER_CURRENCY_NAME=</TextLine>
+        <TextLine>TRANSACTION_DCC_OFFER_CURRENCY=</TextLine>
+        <TextLine>TRANSACTION_DCC_PROVIDER=</TextLine>
+        <TextLine>TRANSACTION_DCC_RATE_SOURCE=</TextLine>
+        <TextLine>TRANSACTION_DCC_TIMESTAMP_DATE=</TextLine>
+        <TextLine>TRANSACTION_DCC_TIMESTAMP_TIME=</TextLine>
+        <TextLine>TRANSACTION_DCC_TIMESTAMP=</TextLine>
+        <TextLine>TRANSACTION_DCC_USAGE=0</TextLine>
+        <TextLine>TRANSACTION_DECLARATION=PLEASE DEBIT MY ACCOUNT WITH TOTAL SHOWN</TextLine>
+        <TextLine>TRANSACTION_IDENTIFIER=0053</TextLine>
+        <TextLine>TRANSACTION_LOCAL_CURRENCY_CODE=826</TextLine>
+        <TextLine>TRANSACTION_LOCAL_CURRENCY_LONG_NAME=Pound Sterling</TextLine>
+        <TextLine>TRANSACTION_LOCAL_CURRENCY_NAME=GBP</TextLine>
+        <TextLine>TRANSACTION_LOCAL_CURRENCY=£</TextLine>
+        <TextLine>TRANSACTION_LOCAL_TOTAL_AMOUNT_STRING=£10.00</TextLine>
+        <TextLine>TRANSACTION_LOCAL_TOTAL_AMOUNT=10.00</TextLine>
+        <TextLine>TRANSACTION_NUMBER=0053</TextLine>
+        <TextLine>TRANSACTION_RESPONSE=APPROVED</TextLine>
+        <TextLine>TRANSACTION_RETENTION_REMINDER=Please retain for your records</TextLine>
+        <TextLine>TRANSACTION_TIME=13:18:27</TextLine>
+        <TextLine>TRANSACTION_TOTAL_AMOUNT_STRING=£10.00</TextLine>
+        <TextLine>TRANSACTION_TOTAL_AMOUNT=10.00</TextLine>
+        <TextLine>TRANSACTION_TYPE=Sale</TextLine>
+        <TextLine>VERIFICATION_TYPE=</TextLine>
+        <TextLine># WH Smith do not print rating on receipt#RATING_PROVIDER=</TextLine>
+        <TextLine>#RATING_QUESTION=</TextLine>
+        <TextLine>#RATING_VALUE=</TextLine>
+        <TextLine>#RATING_MERCHANT_TEXT=</TextLine>
+    </Output>
+</DeviceRequest>

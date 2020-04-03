@@ -6,6 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Dynamics.Commerce.HardwareStation;
+using System.Xml;
+using System.Xml.Schema;
+using System.Xml.Linq;
 
 namespace Hardware.Extension.EPSPaymentConnector.Tests
 {
@@ -42,6 +45,23 @@ namespace Hardware.Extension.EPSPaymentConnector.Tests
             //Assert
             Assert.IsNotNull(response);
         }
-       
+
+        [TestMethod()]
+        public void ParseDeviceRequestMasterTest()
+        {
+            
+                //Arrange
+                string firstRequestXML = string.Empty;
+                string secondRequestXML = string.Empty;
+                string thirdRequestXML = string.Empty;
+                string masterXmlAsString= System.IO.File.ReadAllText("DeviceRequestMaster.txt");
+
+                //Act
+                DeviceComsHandler deviceComsHandler = new DeviceComsHandler();
+                deviceComsHandler.SplitDeviceRequestMessages(masterXmlAsString, out firstRequestXML, out secondRequestXML, out thirdRequestXML);
+
+                //Assert
+                Assert.IsTrue(firstRequestXML.Length > 0);
+        }
     }
 }
