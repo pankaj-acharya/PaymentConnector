@@ -84,9 +84,17 @@ namespace Hardware.Extension.EPSPaymentConnector
                     byte[] thirdMsg = Encoding.ASCII.GetBytes(thirdDeviceResponseMsg);
 
                     // Send back a response.
-                    stream.Write(firstMsg, 0, firstMsg.Length);
+                    //TODO: Add code to add HOSTTONETWORK ORDER BIGIndian notation
+                    //Note : we probably should not need below line as the stream.Write is
+                    //       already passing the number of bytes as third parameter.So test and confirm 
+                    //var hosttoAddressFirst = IPAddress.HostToNetworkOrder(firstMsg.Length);
+
+                    stream.Write(firstMsg, 0,firstMsg.Length);
+                    //var hosttoAddressSecond = IPAddress.HostToNetworkOrder(secondMsg.Length);
                     stream.Write(secondMsg, 0, secondMsg.Length);
-                    stream.Write(thirdMsg, 0, thirdMsg.Length);
+
+                    //var hosttoAddressThird = IPAddress.HostToNetworkOrder(thirdMsg.Length);
+                    stream.Write(thirdMsg, 0,thirdMsg.Length);
 
                     Logger.WriteLog($"Sent deviceResponse data");
 
@@ -368,8 +376,17 @@ namespace Hardware.Extension.EPSPaymentConnector
 
         private string BuildDeviceResponse(DeviceRequest RequestProperties)
         {
-            string deviceResponseXML = $"<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"{RequestProperties.RequestType}\" ApplicationSender=\"{RequestProperties.ApplicationSender}\" RequestID=\"{RequestProperties.RequestID}\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"{RequestProperties.OutDeviceTarget}\" OutResult=\"Success\" /></DeviceResponse>";
-            Logger.WriteLog(deviceResponseXML);
+            string deviceResponseXML = string.Empty;
+            try
+            {
+                deviceResponseXML = $"<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"{RequestProperties.RequestType}\" ApplicationSender=\"{RequestProperties.ApplicationSender}\" RequestID=\"{RequestProperties.RequestID}\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"{RequestProperties.OutDeviceTarget}\" OutResult=\"Success\" /></DeviceResponse>";
+                Logger.WriteLog(deviceResponseXML);
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLog($"An exception occoured in DeviceComsHandler.cs >> BuildDeviceResponse : {ex.Message}");
+            }
+            
             return deviceResponseXML;
         }
 
