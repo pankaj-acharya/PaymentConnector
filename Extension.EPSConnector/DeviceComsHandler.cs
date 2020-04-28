@@ -12,327 +12,57 @@ namespace Hardware.Extension.EPSPaymentConnector
 {
     public class DeviceComsHandler
     {
-        string hostname = "127.0.0.1";
-        int port = 9900;
+        #region LocalVariables
 
-        public void DeviceRequestOneHandler()
+        string hostIP = "127.0.0.1";
+        int hostPort = 9900;
+        
+        TcpListener tcpListener = null;
+        #endregion
+
+        public DeviceComsHandler()
         {
-            TcpListener server = null;
-            try
-            {
-                Logger.WriteLog("Entered method DeviceRequestOneHandler");
-                // Set the TcpListener on port 9900.
-                IPAddress localAddr = IPAddress.Parse(hostname);
-
-                // TcpListener server = new TcpListener(port);
-                server = new TcpListener(localAddr, port);
-
-                // Start listening for client requests.
-                server.Start();
-
-                // Buffer for reading data
-                Byte[] bytes = new Byte[256];
-                String data = null;
-
-                // Enter the listening loop.
-                while (true)
-                {
-                    Logger.WriteLog("Waiting for a connection... ");
-
-                    // Perform a blocking call to accept requests.
-                    // You could also user server.AcceptSocket() here.
-                    TcpClient client = server.AcceptTcpClient();
-                    Logger.WriteLog("Connected!");
-
-                    data = null;
-
-                    // Get a stream object for reading and writing
-                    NetworkStream stream = client.GetStream();
-
-                    int i;
-
-                    // Loop to receive all the data sent by the client.
-                    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                    {
-                        // Translate data bytes to a ASCII string.
-                        Logger.WriteLog($"The devicerequest data in bytes : {bytes} ");
-
-                        data = Encoding.ASCII.GetString(bytes, 0, i);
-                    }
-
-                    Logger.WriteLog($"Received: {data}");
-
-                    string firstRequestXML = string.Empty;
-                    string secondRequestXML = string.Empty;
-                    string thirdRequestXML = string.Empty;
-
-                    if (!string.IsNullOrEmpty(data))
-                        SplitDeviceRequestMessages(data, out firstRequestXML, out secondRequestXML, out thirdRequestXML);
-
-                    //Parse the message
-                    var firstDeviceRequest = ParseDeviceRequestMessage(firstRequestXML);
-                    var secondDeviceRequest = ParseDeviceRequestMessage(secondRequestXML);
-                    var thirdDeviceRequest = ParseDeviceRequestMessage(thirdRequestXML);
-
-                    //Build deviceResponseXML
-                    var firstDeviceResponseMsg = BuildDeviceResponse(firstDeviceRequest);
-                    var secondDeviceResponseMsg = BuildDeviceResponse(secondDeviceRequest);
-                    var thirdDeviceResponseMsg = BuildDeviceResponse(thirdDeviceRequest);
-
-                    byte[] firstMsg = Encoding.ASCII.GetBytes(firstDeviceResponseMsg);
-                    byte[] secondMsg = Encoding.ASCII.GetBytes(secondDeviceResponseMsg);
-                    byte[] thirdMsg = Encoding.ASCII.GetBytes(thirdDeviceResponseMsg);
-
-                    // Send back a response.
-                    //TODO: Add code to add HOSTTONETWORK ORDER BIGIndian notation
-                    //Note : we probably should not need below line as the stream.Write is
-                    //       already passing the number of bytes as third parameter.So test and confirm 
-                    //var hosttoAddressFirst = IPAddress.HostToNetworkOrder(firstMsg.Length);
-
-                    stream.Write(firstMsg, 0,firstMsg.Length);
-                    //var hosttoAddressSecond = IPAddress.HostToNetworkOrder(secondMsg.Length);
-                    stream.Write(secondMsg, 0, secondMsg.Length);
-
-                    //var hosttoAddressThird = IPAddress.HostToNetworkOrder(thirdMsg.Length);
-                    stream.Write(thirdMsg, 0,thirdMsg.Length);
-
-                    Logger.WriteLog($"Sent deviceResponse data");
-
-                    // Shutdown and end connection
-                    client.Close();
-                }
-            }
-            catch (SocketException e)
-            {
-                Logger.WriteLog($"SocketException in DeviceRequestOneHandler: {e}");
-            }
-            finally
-            {
-                // Stop listening for new clients.
-                server.Stop();
-            }
+            Logger.WriteLog("DeviceComsHandler constructor");
+            IPAddress ipAddress = IPAddress.Parse(hostIP);
+            tcpListener = new TcpListener(ipAddress, hostPort);
+            tcpListener.Start();
 
         }
-        public void DeviceRequestTwoHandler()
+
+        public void StopTcpServer()
         {
-            TcpListener server = null;
             try
             {
-                Logger.WriteLog("Entered method DeviceRequestTwoHandler");
-                // Set the TcpListener on port 9900.
-                IPAddress localAddr = IPAddress.Parse(hostname);
-
-                // TcpListener server = new TcpListener(port);
-                server = new TcpListener(localAddr, port);
-
-                // Start listening for client requests.
-                server.Start();
-
-                // Buffer for reading data
-                Byte[] bytes = new Byte[256];
-                String data = null;
-
-                // Enter the listening loop.
-                while (true)
-                {
-                    Logger.WriteLog("Waiting for a connection... ");
-
-                    // Perform a blocking call to accept requests.
-                    // You could also user server.AcceptSocket() here.
-                    TcpClient client = server.AcceptTcpClient();
-                    Logger.WriteLog("Connected!");
-
-                    data = null;
-
-                    // Get a stream object for reading and writing
-                    NetworkStream stream = client.GetStream();
-
-                    int i;
-
-                    // Loop to receive all the data sent by the client.
-                    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                    {
-                        // Translate data bytes to a ASCII string.
-                        data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Logger.WriteLog($"Received: {data}");
-
-                        //Parse the message
-                        var deviceRequest = ParseDeviceRequestMessage(data);
-
-                        //Build deviceResponseXML
-                        var deviceResponseXml = BuildDeviceResponse(deviceRequest);
-                        // Process the data sent by the client.
-                        //data = data.ToUpper();
-
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(deviceResponseXml);
-
-                        // Send back a response.
-                        stream.Write(msg, 0, msg.Length);
-                        Logger.WriteLog($"Sent data");
-                    }
-
-                    // Shutdown and end connection
-                    client.Close();
-                }
+                tcpListener.Stop();
             }
-            catch (SocketException e)
+            catch (Exception ex)
             {
-                Logger.WriteLog($"SocketException in DeviceRequestTwoHandler: {e}");
+                Logger.WriteLog($"Exception occourded at StopTcpServer(). Message :{ex.InnerException}");
             }
-            finally
-            {
-                // Stop listening for new clients.
-                server.Stop();
-            }
+        }
+        public void DeviceRequestOneHandler()
+        {
+            Logger.WriteLog("Entered method DeviceRequestOneHandler");
+            RecieveAndSendDeviceComs();
+        }
+
+        public void DeviceRequestTwoHandler()
+        {
+            Logger.WriteLog("Entered method DeviceRequestTwoHandler");
+            RecieveAndSendDeviceComs();
         }
         public void DeviceRequestThreeHandler()
         {
-            TcpListener server = null;
-            try
-            {
-                Logger.WriteLog("Entered method DeviceRequestThreeHandler");
-                // Set the TcpListener on port 9900.
-                IPAddress localAddr = IPAddress.Parse(hostname);
+            Logger.WriteLog("Entered method DeviceRequestThreeHandler");
+            RecieveAndSendDeviceComs();
 
-                // TcpListener server = new TcpListener(port);
-                server = new TcpListener(localAddr, port);
-
-                // Start listening for client requests.
-                server.Start();
-
-                // Buffer for reading data
-                Byte[] bytes = new Byte[256];
-                String data = null;
-
-                // Enter the listening loop.
-                while (true)
-                {
-                    Logger.WriteLog("Waiting for a connection... ");
-
-                    // Perform a blocking call to accept requests.
-                    // You could also user server.AcceptSocket() here.
-                    TcpClient client = server.AcceptTcpClient();
-                    Logger.WriteLog("Connected!");
-
-                    data = null;
-
-                    // Get a stream object for reading and writing
-                    NetworkStream stream = client.GetStream();
-
-                    int i;
-
-                    // Loop to receive all the data sent by the client.
-                    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                    {
-                        // Translate data bytes to a ASCII string.
-                        data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Logger.WriteLog($"Received: {data}");
-
-                        //Parse the message
-                        var deviceRequest = ParseDeviceRequestMessage(data);
-
-                        //Build deviceResponseXML
-                        var deviceResponseXml = BuildDeviceResponse(deviceRequest);
-                        // Process the data sent by the client.
-                        //data = data.ToUpper();
-
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(deviceResponseXml);
-
-                        // Send back a response.
-                        stream.Write(msg, 0, msg.Length);
-                        Logger.WriteLog($"Sent: {msg}");
-                    }
-
-                    // Shutdown and end connection
-                    client.Close();
-                }
-            }
-            catch (SocketException e)
-            {
-                Logger.WriteLog($"SocketException in DeviceRequestThreeHandler: {e}");
-            }
-            finally
-            {
-                // Stop listening for new clients.
-                server.Stop();
-            }
         }
         public void DeviceRequestFourHandler()
         {
-            TcpListener server = null;
-            try
-            {
-                Logger.WriteLog("Entered method DeviceRequestFourHandler");
-                // Set the TcpListener on port 9900.
-                IPAddress localAddr = IPAddress.Parse(hostname);
-
-                // TcpListener server = new TcpListener(port);
-                server = new TcpListener(localAddr, port);
-
-                // Start listening for client requests.
-                server.Start();
-
-                // Buffer for reading data
-                Byte[] bytes = new Byte[256];
-                String data = null;
-
-                // Enter the listening loop.
-                while (true)
-                {
-                    Logger.WriteLog("Waiting for a connection... ");
-
-                    // Perform a blocking call to accept requests.
-                    // You could also user server.AcceptSocket() here.
-                    TcpClient client = server.AcceptTcpClient();
-                    Logger.WriteLog("Connected!");
-
-                    data = null;
-
-                    // Get a stream object for reading and writing
-                    NetworkStream stream = client.GetStream();
-
-                    int i;
-
-                    // Loop to receive all the data sent by the client.
-                    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                    {
-                        // Translate data bytes to a ASCII string.
-                        Logger.WriteLog($"Raw bytes : {bytes}");
-                        data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Logger.WriteLog($"Received data encoded: {data}");
-
-                        //Parse the message
-                        //var deviceRequest = ParseDeviceRequestMessage(data);
-
-                        //Build deviceResponseXML
-                        //var deviceResponseXml = BuildDeviceResponse(deviceRequest);
-
-                        // Process the data sent by the client.
-                        //data = data.ToUpper();
-
-                        //byte[] msg = System.Text.Encoding.ASCII.GetBytes(deviceResponseXml);
-
-                        // Send back a response.
-                        //stream.Write(msg, 0, msg.Length);
-                        //Logger.WriteLog($"Sent: {data}");
-                    }
-                    
-
-                    // Shutdown and end connection
-                    client.Close();
-                }
-            }
-            catch (SocketException e)
-            {
-                Logger.WriteLog($"SocketException in DeviceRequestFourHandler: {e}");
-            }
-            finally
-            {
-                // Stop listening for new clients.
-                server.Stop();
-            }
+            Logger.WriteLog("Entered method DeviceRequestFourHandler");
+            RecieveAndSendDeviceComs();
         }
-        public void SplitDeviceRequestMessages(string masterXmlAsString,out string firstRequestXML,out string secondRequestXML,out string thirdRequestXML)
+        public void SplitDeviceRequestMessages(string masterXmlAsString, out string firstRequestXML, out string secondRequestXML, out string thirdRequestXML)
         {
             string customSeparator = "</DeviceRequest>";
 
@@ -380,16 +110,93 @@ namespace Hardware.Extension.EPSPaymentConnector
             try
             {
                 deviceResponseXML = $"<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"{RequestProperties.RequestType}\" ApplicationSender=\"{RequestProperties.ApplicationSender}\" RequestID=\"{RequestProperties.RequestID}\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"{RequestProperties.OutDeviceTarget}\" OutResult=\"Success\" /></DeviceResponse>";
-                Logger.WriteLog(deviceResponseXML);
+                //Logger.WriteLog(deviceResponseXML);
             }
             catch (Exception ex)
             {
                 Logger.WriteLog($"An exception occoured in DeviceComsHandler.cs >> BuildDeviceResponse : {ex.Message}");
             }
-            
+
             return deviceResponseXML;
         }
+        private void RecieveAndSendDeviceComs()
+        {
+            try
+            {
+                // Perform a blocking call to accept requests.
+                // You could also user server.AcceptSocket() here.
+                TcpClient client = tcpListener.AcceptTcpClient();
+                Logger.WriteLog("Connected!");
 
+                // Buffer for reading data
+                byte[] bytes = new byte[512];
+                string data = null;
+
+                // Enter the listening loop.
+                if (client.Connected)
+                {
+                    data = null;
+                    NetworkStream networkStream = client.GetStream();
+                    int i;
+
+                    // Loop to receive all the data sent by the client.
+                    Logger.WriteLog("Started reading !");
+
+                    //BEGIN get data size
+                    byte[] first4Bytes = new byte[4];
+                    var dataRead = networkStream.Read(first4Bytes, 0, 4);
+
+                    // If the system architecture is little-endian (that is, little end first),
+                    // reverse the byte array.
+                    if (BitConverter.IsLittleEndian)
+                        Array.Reverse(first4Bytes);
+
+                    int dataSizeToRead = BitConverter.ToInt32(first4Bytes, 0);
+                    Logger.WriteLog($"data size to read int: { dataSizeToRead}");
+
+                    bytes = new byte[dataSizeToRead];
+                    //END
+                    //while ((i = networkStream.Read(bytes, 0, bytes.Length)) != 0)
+                    //{
+                    //    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
+                    //}
+                    i = networkStream.Read(bytes, 0,dataSizeToRead);
+                    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
+
+                    //Parse the message
+                    var deviceRequest = ParseDeviceRequestMessage(data);
+
+                    //Build deviceResponseXML
+                    var deviceResponseMessage = BuildDeviceResponse(deviceRequest);
+                    byte[] message = Encoding.ASCII.GetBytes(deviceResponseMessage);
+
+                    // Send back a response.
+                    //TODO: Add code to add HOSTTONETWORK ORDER BIGIndian notation
+                    //Note : we probably should not need below linees as the stream.Write is
+                    //       already passing the number of bytes as third parameter.So test and confirm 
+                    //BinaryWriter binaryWriter = new BinaryWriter(networkStream);
+                    //var hosttoAddress = IPAddress.HostToNetworkOrder(message.Length);
+                    //binaryWriter.Write(hosttoAddress);
+                    //binaryWriter.Write(message);
+
+                    networkStream.Write(message, 0, message.Length);
+
+                    Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
+
+                    // Shutdown and end connection
+                   // networkStream.Close();
+                    client.Close();
+                }
+                else
+                {
+                    Logger.WriteLog($"Couldn't connect to the client");
+                }
+            }
+            catch (SocketException e)
+            {
+                Logger.WriteLog($"SocketException in RecieveAndSendDeviceComs: {e}");
+            }
+        }
     }
     public class DeviceRequest
     {

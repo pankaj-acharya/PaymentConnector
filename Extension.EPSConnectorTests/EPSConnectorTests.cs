@@ -59,9 +59,37 @@ namespace Hardware.Extension.EPSPaymentConnector.Tests
                 //Act
                 DeviceComsHandler deviceComsHandler = new DeviceComsHandler();
                 deviceComsHandler.SplitDeviceRequestMessages(masterXmlAsString, out firstRequestXML, out secondRequestXML, out thirdRequestXML);
-
+                
                 //Assert
                 Assert.IsTrue(firstRequestXML.Length > 0);
         }
+
+        [TestMethod()]
+        public void TestStringEncodeDecodeDuration()
+        {
+
+            //Arrange
+            string firstRequestXML = string.Empty;
+            string secondRequestXML = string.Empty;
+            string thirdRequestXML = string.Empty;
+            string masterXmlAsString = System.IO.File.ReadAllText("DeviceRequestMaster.txt");
+
+            //Act
+            DeviceComsHandler deviceComsHandler = new DeviceComsHandler();
+            deviceComsHandler.SplitDeviceRequestMessages(masterXmlAsString, out firstRequestXML, out secondRequestXML, out thirdRequestXML);
+
+            Logger.WriteLog("started operation");
+
+            byte[] encodedMessage = Encoding.ASCII.GetBytes(firstRequestXML);
+            Logger.WriteLog("finished encoding");
+
+            var decodedMessage = Encoding.ASCII.GetString(encodedMessage);
+
+            Logger.WriteLog("finished decoding");
+
+            //Assert
+            Assert.IsTrue(firstRequestXML.Length > 0);
+        }
+
     }
 }
