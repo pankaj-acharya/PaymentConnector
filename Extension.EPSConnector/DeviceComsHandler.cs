@@ -23,16 +23,14 @@ namespace Hardware.Extension.EPSPaymentConnector
         public DeviceComsHandler()
         {
             Logger.WriteLog("DeviceComsHandler constructor");
-            IPAddress ipAddress = IPAddress.Parse(hostIP);
-            tcpListener = new TcpListener(ipAddress, hostPort);
-            tcpListener.Start();
+            
         }
 
         public void StopTcpServer()
         {
             try
             {
-                tcpListener.Stop();
+                //tcpListener.Stop();
             }
             catch (Exception ex)
             {
@@ -122,6 +120,10 @@ namespace Hardware.Extension.EPSPaymentConnector
         {
             try
             {
+                IPAddress ipAddress = IPAddress.Parse(hostIP);
+                tcpListener = new TcpListener(ipAddress, hostPort);
+                tcpListener.Start();
+
                 // Buffer for reading data
                 byte[] bytes = new byte[512];
                 string data = null;
@@ -161,7 +163,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                     //    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
                     //}
                     i = networkStream.Read(bytes, 0,dataSizeToRead);
-                    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
+                    data = Encoding.ASCII.GetString(bytes, 4, i);
 
                     //Parse the message
                     var deviceRequest = ParseDeviceRequestMessage(data);
