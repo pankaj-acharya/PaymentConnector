@@ -26,7 +26,6 @@ namespace Hardware.Extension.EPSPaymentConnector
             IPAddress ipAddress = IPAddress.Parse(hostIP);
             tcpListener = new TcpListener(ipAddress, hostPort);
             tcpListener.Start();
-
         }
 
         public void StopTcpServer()
@@ -123,23 +122,24 @@ namespace Hardware.Extension.EPSPaymentConnector
         {
             try
             {
-                // Perform a blocking call to accept requests.
-                // You could also user server.AcceptSocket() here.
-                TcpClient client = tcpListener.AcceptTcpClient();
-                Logger.WriteLog("Connected!");
-
                 // Buffer for reading data
                 byte[] bytes = new byte[512];
                 string data = null;
 
                 // Enter the listening loop.
-                if (client.Connected)
+                while (true)
                 {
+                    Logger.WriteLog("Waiting for a connection...");
+
+                    // Perform a blocking call to accept requests.
+                    // You could also user tcpListener.AcceptSocket() here.
+                    TcpClient client = tcpListener.AcceptTcpClient();
+                    Logger.WriteLog("Connected!");
+
                     data = null;
                     NetworkStream networkStream = client.GetStream();
                     int i;
 
-                    // Loop to receive all the data sent by the client.
                     Logger.WriteLog("Started reading !");
 
                     //BEGIN get data size
@@ -187,10 +187,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                    // networkStream.Close();
                     client.Close();
                 }
-                else
-                {
-                    Logger.WriteLog($"Couldn't connect to the client");
-                }
+               
             }
             catch (SocketException e)
             {
