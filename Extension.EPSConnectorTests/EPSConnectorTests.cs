@@ -91,5 +91,25 @@ namespace Hardware.Extension.EPSPaymentConnector.Tests
             Assert.IsTrue(firstRequestXML.Length > 0);
         }
 
+        [TestMethod]
+        public void ParseDeviceResponseXML()
+        {
+            try
+            {
+                string XmlMessage = "<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"Output\" ApplicationSender=\"GSPOS\" RequestID=\"39\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"PrinterReceipt\" OutResult=\"Success\" /></DeviceResponse>";
+                var xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(XmlMessage);
+
+                XmlNodeList deviceRequestNode = xmlDoc.GetElementsByTagName("DeviceResponse");
+                var requestType = deviceRequestNode[0].Attributes["RequestType"].Value;
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
     }
 }

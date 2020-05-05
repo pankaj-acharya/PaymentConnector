@@ -106,7 +106,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             string deviceResponseXML = string.Empty;
             try
             {
-                deviceResponseXML = $"<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"{RequestProperties.RequestType}\" ApplicationSender=\"{RequestProperties.ApplicationSender}\" RequestID=\"{RequestProperties.RequestID}\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"{RequestProperties.OutDeviceTarget}\" OutResult=\"Success\" /></DeviceResponse>";
+                deviceResponseXML = $"<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"{RequestProperties.RequestType}\" ApplicationSender=\"GSPOS\" RequestID=\"{RequestProperties.RequestID}\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"{RequestProperties.OutDeviceTarget}\" OutResult=\"Success\" /></DeviceResponse>";
                 //Logger.WriteLog(deviceResponseXML);
             }
             catch (Exception ex)
@@ -127,10 +127,11 @@ namespace Hardware.Extension.EPSPaymentConnector
                 // Buffer for reading data
                 byte[] bytes = new byte[512];
                 string data = null;
-
+                int numberofCall = 0;
                 // Enter the listening loop.
-                while (true)
+                while (numberofCall < 4)
                 {
+                    numberofCall = numberofCall + 1;
                     Logger.WriteLog("Waiting for a connection...");
 
                     // Perform a blocking call to accept requests.
@@ -163,7 +164,9 @@ namespace Hardware.Extension.EPSPaymentConnector
                     //    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
                     //}
                     i = networkStream.Read(bytes, 0,dataSizeToRead);
-                    data = Encoding.ASCII.GetString(bytes, 4, i);
+                    Logger.WriteLog($"Data size excluding first 4 bytes: { i}");
+
+                    data = Encoding.ASCII.GetString(bytes, 0, i);
 
                     //Parse the message
                     var deviceRequest = ParseDeviceRequestMessage(data);
@@ -176,17 +179,17 @@ namespace Hardware.Extension.EPSPaymentConnector
                     //TODO: Add code to add HOSTTONETWORK ORDER BIGIndian notation
                     //Note : we probably should not need below linees as the stream.Write is
                     //       already passing the number of bytes as third parameter.So test and confirm 
-                    //BinaryWriter binaryWriter = new BinaryWriter(networkStream);
-                    //var hosttoAddress = IPAddress.HostToNetworkOrder(message.Length);
-                    //binaryWriter.Write(hosttoAddress);
-                    //binaryWriter.Write(message);
+                    BinaryWriter binaryWriter = new BinaryWriter(networkStream);
+                    var hosttoAddress = IPAddress.HostToNetworkOrder(message.Length);
+                    binaryWriter.Write(hosttoAddress);
+                    binaryWriter.Write(message);
 
-                    networkStream.Write(message, 0, message.Length);
+                    //networkStream.Write(message, 0, message.Length);
 
                     Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
 
                     // Shutdown and end connection
-                   // networkStream.Close();
+                   // networkStream.Close(); //TODO: need to test using this as well?
                     client.Close();
                 }
                

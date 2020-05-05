@@ -1258,15 +1258,15 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                 //4 read device request 9900
                 //5 write<deviceresponse> message on port 9900  with same RequestId from step 4
-                deviceComsHandler.DeviceRequestTwoHandler();
+                //deviceComsHandler.DeviceRequestTwoHandler();
 
                 //6 read device request on port 9900
                 //7 write<deviceresponse> message on port 9900  with same RequestId from step 6
-                deviceComsHandler.DeviceRequestThreeHandler();
+                //deviceComsHandler.DeviceRequestThreeHandler();
 
                 //8 read device request on port 9900
                 //9 write<deviceresponse> message on port 9900  with same RequestId from step 9
-                deviceComsHandler.DeviceRequestFourHandler();
+                //deviceComsHandler.DeviceRequestFourHandler();
 
                 deviceComsHandler.StopTcpServer();
                 // String to store the response ASCII representation.
@@ -1274,7 +1274,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 Logger.WriteLog($"Calling stream.Read in  SendRequestTcp with data");
 
                 //10 Read CardServiceResponse
-                data = new byte[512];
+                data = new byte[1024]; //TODO : Make this dynamic
                 int bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 4, (bytes - 4));
                 Logger.WriteLog($"Response message is :{responseData}");
