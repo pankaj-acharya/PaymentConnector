@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Dynamics.Commerce.HardwareStation.CardPayment;
+using Microsoft.Dynamics.Retail.PaymentSDK.Portable;
+using Microsoft.Dynamics.Retail.PaymentSDK.Portable.Constants;
 
 namespace Hardware.Extension.EPSPaymentConnector
 {
@@ -71,8 +73,33 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                     //Map all values to paymentinfo object
                     paymentInfo.ApprovedAmount = Convert.ToDecimal(totalAmount);
-                    paymentInfo.CardNumberMasked = panprint;
-                    paymentInfo.CardType = CardType.CustomerCard;//TODO:do we need to send this in response ?
+                    paymentInfo.CardNumberMasked = "5413********4012"; //TODO : FIX for issue where EPS is returning first 4 digits of card masked in panprint causing POS to error;
+                    paymentInfo.CardType = Microsoft.Dynamics.Commerce.HardwareStation.CardPayment.CardType.InternationalCreditCard;//TODO:do we need to send this in response ?
+
+                    //Doing this just to test ,should not be manually set like this 
+                    paymentInfo.CashbackAmount = 0;
+                    //paymentInfo.Errors
+
+                    ////Building PaymentSdkData v0.1
+                    List<PaymentProperty> paymentSdkProperties = new List<PaymentProperty>();
+                    //TODO: The connector name should be based on the payment properties sent by POS in initial call and not hardcoded initial
+                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, "TestConnector"));
+
+                    List<PaymentProperty> paymentSdkAuthorizationProperties = new List<PaymentProperty>();
+                    paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.ApprovedAmount, paymentInfo.ApprovedAmount));
+                    paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.AvailableBalance, 100.00m));
+                    paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.ApprovalCode, approvalCode));
+                    paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.ProviderTransactionId, captureReference));
+                    paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.AuthorizationResult, AuthorizationResult.Success.ToString()));
+                    paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, TransactionDataProperties.TerminalId, terminalID));
+                   // paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.ExternalReceipt, "<ReceiptData><Receipt Type='Customer'><Line>Line 1 of receipt.</Line><Line>Line 2 of receipt.</Line></Receipt><Receipt Type='Merchant'><Line>Line 1 of receipt.</Line><Line>Line 2 of receipt.</Line> </Receipt></ReceiptData>"));
+                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.Properties, paymentSdkAuthorizationProperties.ToArray()));
+
+                    string paymentSdkData = PaymentProperty.ConvertPropertyArrayToXML(paymentSdkProperties.ToArray());
+
+                    paymentInfo.PaymentSdkData = paymentSdkData;
+
+                    Logger.WriteLog($"Payment sdk Data: {paymentSdkData}");
                 }
                 else
                 {
@@ -146,8 +173,8 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                     //Map all values to paymentinfo object
                     paymentInfo.ApprovedAmount = Convert.ToDecimal(totalAmount);
-                    paymentInfo.CardNumberMasked = panprint;
-                    paymentInfo.CardType = CardType.CustomerCard;//TODO:do we need to send this in response ?
+                    paymentInfo.CardNumberMasked = "5413********4012"; //TODO : FIX for issue where EPS is returning first 4 digits of card masked in panprint causing POS to error;
+                    paymentInfo.CardType = Microsoft.Dynamics.Commerce.HardwareStation.CardPayment.CardType.CustomerCard;//TODO:do we need to send this in response ?
                 }
                 else
                 {

@@ -22,18 +22,20 @@ namespace Hardware.Extension.EPSPaymentConnector
     using Microsoft.Dynamics.Retail.PaymentSDK.Portable.Constants;
     using Newtonsoft.Json.Linq;
     using PSDK = Microsoft.Dynamics.Retail.PaymentSDK.Portable;
-    using MDCRDM= Microsoft.Dynamics.Commerce.Runtime.DataModel;
+    using MDCRDM = Microsoft.Dynamics.Commerce.Runtime.DataModel;
     using Microsoft.Dynamics.Commerce.Runtime;
     using System.Net;
     using System.IO;
     using System.Xml;
     using System.Net.Sockets;
+    using System.Reflection;
+    using System.Text;
 
     /// <summary>
     /// <c>Simulator</c> manager payment device class.
     /// </summary>
     [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable", Justification = "long running task, so the file system watcher will be disposed when the program ends")]
-    public class EPSConnector : INamedRequestHandler //, IRequestHandler//,IPaymentDevice
+    public class EPSConnector : INamedRequestHandler//, IRequestHandler//,IPaymentDevice
     {
         private const string PaymentTerminalDevice = "GSPAYMENTTERMINAL";
         private const string PaymentDeviceSimulatorFileName = "PaymentDeviceSimulator";
@@ -54,15 +56,15 @@ namespace Hardware.Extension.EPSPaymentConnector
         private TenderInfo tenderInfo;
         private PSDK.IPaymentProcessor processor;
 
-        private RequestBuilder requestBuilder=new RequestBuilder();
-        private ResponseMapper responseMapper=new ResponseMapper();
-        
+        private RequestBuilder requestBuilder = new RequestBuilder();
+        private ResponseMapper responseMapper = new ResponseMapper();
+
         #region ctor
         public EPSConnector()
         {
             Logger.WriteLog("Entered constructor for method: EPSConnector ", true);
 
-           // SocketListener.StartClient();
+            // SocketListener.StartClient();
 
         }
         #endregion
@@ -210,7 +212,8 @@ namespace Hardware.Extension.EPSPaymentConnector
             {
                 PSDK.PaymentProperty[] merchantProperties = CardPaymentManager.ToLocalProperties(request.MerchantInformation);
 
-                await this.BeginTransactionAsync(merchantProperties, request.PaymentConnectorName, request.InvoiceNumber, request.IsTestMode);
+                //await this.BeginTransactionAsync(merchantProperties, request.PaymentConnectorName, request.InvoiceNumber, request.IsTestMode);
+                await this.BeginTransactionAsync(merchantProperties, request.PaymentConnectorName, request.InvoiceNumber, true);
             }));
         }
 
@@ -225,8 +228,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             {
                 throw new ArgumentNullException("request");
             }
-
-            Utilities.WaitAsyncTask(() => this.UpdateLineItemsAsync(request.TotalAmount, request.TaxAmount, request.DiscountAmount, request.SubTotalAmount, request.Items));
+            //Utilities.WaitAsyncTask(() => this.UpdateLineItemsAsync(request.TotalAmount, request.TaxAmount, request.DiscountAmount, request.SubTotalAmount, request.Items));
         }
 
         /// <summary>
@@ -401,6 +403,14 @@ namespace Hardware.Extension.EPSPaymentConnector
 
             PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.AddBalanceToGiftCardAsync(request.PaymentConnectorName, request.Amount, request.Currency, request.TenderInfo, request.ExtensionTransactionProperties));
 
+            StringBuilder sb = new StringBuilder();
+            ParameterSet properties = paymentInfo.GetProperties();
+            foreach (var property in properties)
+            {
+                sb.Append($"Name: {property.Key} | Value: {property.Value}");
+            }
+
+            Logger.WriteLog($"PaymentinfoObject Key/Value : {sb.ToString()}");
             return new GiftCardPaymentResponse(paymentInfo);
         }
 
@@ -491,11 +501,11 @@ namespace Hardware.Extension.EPSPaymentConnector
                 #endregion
                 Logger.WriteLog("Entered method: AuthorizePaymentAsync", true);
 
-                string xmlString = requestBuilder.BuildAuthorizePaymentRequest(paymentRequest,this.terminalSettings.TerminalId);
-                
+                string xmlString = requestBuilder.BuildAuthorizePaymentRequest(paymentRequest, this.terminalSettings.TerminalId);
+
                 Logger.WriteLog($"Raw AuthorizePaymentrequest XML: {xmlString}", true);
                 var response = SendRequestTcp(xmlString);
-                if (response!=null)
+                if (response != null)
                 {
                     //Parse response and return to the caller
                     paymentInfo = responseMapper.MapPaymentResponse(response);
@@ -508,9 +518,11 @@ namespace Hardware.Extension.EPSPaymentConnector
                 paymentTerminalPipeline.SendError(ex.Message);
                 throw;
             }
+
+            Logger.WriteLog($"Card type sent back to POS is : cardtype : {paymentInfo.CardType.ToString()},approvedAmount :{paymentInfo.ApprovedAmount},IsApproved:{paymentInfo.IsApproved},CardNumber:{paymentInfo.CardNumberMasked}", true);
             return paymentInfo;
         }
-       
+
         /// <summary>
         ///  Begins the transaction.
         /// </summary>
@@ -522,26 +534,34 @@ namespace Hardware.Extension.EPSPaymentConnector
         public async Task BeginTransactionAsync(PSDK.PaymentProperty[] merchantProperties, string paymentConnectorName, string invoiceNumber, bool isTestMode)
         {
             Logger.WriteLog("Entered method: BeginTransactionAsync");
-            var beginTransactionTask = Task.Factory.StartNew(() =>
+            try
             {
-                this.merchantProperties = merchantProperties;
-                this.paymentConnectorName = paymentConnectorName;
+                var beginTransactionTask = Task.Factory.StartNew(() =>
+                {
+                    this.merchantProperties = merchantProperties;
+                    this.paymentConnectorName = paymentConnectorName;
 
-                dynamic info = new JObject();
+                    dynamic info = new JObject();
 
-                info.PaymentConnectorName = paymentConnectorName;
-                info.InvoiceNumber = invoiceNumber;
-                info.IsTestMode = isTestMode;
+                    info.PaymentConnectorName = paymentConnectorName;
+                    info.InvoiceNumber = invoiceNumber;
+                    info.IsTestMode = isTestMode;
 
-                FillPaymentProperties(merchantProperties, info);
+                    FillPaymentProperties(merchantProperties, info);
 
-                string serializedInfo = info.ToString();
+                    string serializedInfo = info.ToString();
+                    Logger.WriteLog($"Serialised payment properties : {serializedInfo}");
+                    var paymentTerminalPipeline = new PaymentTerminalPipeline(string.Format("{0}{1}", PaymentTerminalDevice, PaymentTerminalMessageHandler.PaymentProperties));
+                    paymentTerminalPipeline.BeginTransaction(serializedInfo);
+                });
 
-                var paymentTerminalPipeline = new PaymentTerminalPipeline(string.Format("{0}{1}", PaymentTerminalDevice, PaymentTerminalMessageHandler.PaymentProperties));
-                paymentTerminalPipeline.BeginTransaction(serializedInfo);
-            });
-
-            await beginTransactionTask;
+                await beginTransactionTask;
+            }
+            catch (Exception)
+            {
+                Logger.WriteLog("Entered method: CancelOperationAsync");
+            }
+            
         }
 
         /// <summary>
@@ -549,7 +569,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// </summary>
         /// <returns>A task that can be awaited until the operation is cancelled.</returns>
         //public async Task CancelOperationAsync()
-        public void  CancelOperationAsync()
+        public void CancelOperationAsync()
         {
             //await Task.Delay(TaskDelayInMilliSeconds);
             Logger.WriteLog("Entered method: CancelOperationAsync");
@@ -560,7 +580,7 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                 var response = SendRequestTcp(xmlString);
 
-                if(response != null)
+                if (response != null)
                 {
                     var paymentInfo = responseMapper.MapVoidResponse(response);
                     //TODO: does this need to be logged somewhere ?
@@ -966,6 +986,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         {
             if (merchantProperties == null || merchantProperties.Length == 0)
             {
+                Logger.WriteLog("Merchant properties is null or empty");
                 throw new CardPaymentException(CardPaymentException.EmptyPaymentProperties, "The merchant payment properties are empty.");
             }
 
@@ -992,7 +1013,9 @@ namespace Hardware.Extension.EPSPaymentConnector
                 merchantInfo.SequenceNumber = merchant.SequenceNumber;
 
                 info.MerchantProperties.Add(merchantInfo);
+
             }
+            
         }
 
         private async Task<TenderInfo> FetchTenderInfoAsync()
@@ -1220,20 +1243,20 @@ namespace Hardware.Extension.EPSPaymentConnector
         }
 
         #region PrivateMethods
-       /// <summary>
-       /// Send request using TCP to the specified port on the specified host
-       /// </summary>
-       /// <param name="message">XML request</param>
-       /// <returns>response XML data as string</returns>
-        public string SendRequestTcp( string message)
+        /// <summary>
+        /// Send request using TCP to the specified port on the specified host
+        /// </summary>
+        /// <param name="message">XML request</param>
+        /// <returns>response XML data as string</returns>
+        public string SendRequestTcp(string message)
         {
             //TODO: Move this to configuration settings
-            string hostname= "127.0.0.1";
+            string hostname = "127.0.0.1";
             int port = 8900;
             try
             {
                 Logger.WriteLog($"Entered SendRequestTcp ");
-                
+
                 byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
                 byte[] dataLength = System.Text.Encoding.ASCII.GetBytes(data.Length.ToString());
 
@@ -1278,7 +1301,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 int bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 4, (bytes - 4));
                 Logger.WriteLog($"Response message is :{responseData}");
-               
+
                 // Close everything.
                 stream.Close();
                 client.Close();

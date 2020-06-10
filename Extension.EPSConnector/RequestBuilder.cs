@@ -37,7 +37,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         public string BuildCancelPaymentRequest(string workStationId)
         {
             string customRequestIdForRefund = LastTransactionNumber + "_r";
-            string cancelRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"PaymentRefund\" WorkstationID=\"{workStationId}\" RequestID=\"{customRequestIdForRefund}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN>False</ManualPAN> <TransactionNumber>{LastTransactionNumber} </TransactionNumber>  </POSdata></CardServiceRequest>";
+            string cancelRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"AbortRequest\" WorkstationID=\"{workStationId}\" RequestID=\"{customRequestIdForRefund}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN>False</ManualPAN> <TransactionNumber>{LastTransactionNumber} </TransactionNumber>  </POSdata></CardServiceRequest>";
             return cancelRequestXML;
         }
 

@@ -16,14 +16,14 @@ namespace Hardware.Extension.EPSPaymentConnector
 
         string hostIP = "127.0.0.1";
         int hostPort = 9900;
-        
+
         TcpListener tcpListener = null;
         #endregion
 
         public DeviceComsHandler()
         {
             Logger.WriteLog("DeviceComsHandler constructor");
-            
+
         }
 
         public void StopTcpServer()
@@ -40,7 +40,8 @@ namespace Hardware.Extension.EPSPaymentConnector
         public void DeviceRequestOneHandler()
         {
             Logger.WriteLog("Entered method DeviceRequestOneHandler");
-            RecieveAndSendDeviceComs();
+            //RecieveAndSendDeviceComs();
+            RecieveAndSendDeviceComsDynamic();
         }
 
         public void DeviceRequestTwoHandler()
@@ -163,7 +164,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                     //{
                     //    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
                     //}
-                    i = networkStream.Read(bytes, 0,dataSizeToRead);
+                    i = networkStream.Read(bytes, 0, dataSizeToRead);
                     Logger.WriteLog($"Data size excluding first 4 bytes: { i}");
 
                     data = Encoding.ASCII.GetString(bytes, 0, i);
@@ -176,30 +177,138 @@ namespace Hardware.Extension.EPSPaymentConnector
                     byte[] message = Encoding.ASCII.GetBytes(deviceResponseMessage);
 
                     // Send back a response.
-                    //TODO: Add code to add HOSTTONETWORK ORDER BIGIndian notation
-                    //Note : we probably should not need below linees as the stream.Write is
-                    //       already passing the number of bytes as third parameter.So test and confirm 
                     BinaryWriter binaryWriter = new BinaryWriter(networkStream);
                     var hosttoAddress = IPAddress.HostToNetworkOrder(message.Length);
-                    binaryWriter.Write(hosttoAddress);
-                    binaryWriter.Write(message);
+                    binaryWriter.Write(hosttoAddress); //data size
+                    binaryWriter.Write(message);       //actual data
 
                     //networkStream.Write(message, 0, message.Length);
 
                     Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
 
                     // Shutdown and end connection
-                   // networkStream.Close(); //TODO: need to test using this as well?
+                    // networkStream.Close(); //TODO: need to test using this as well?
                     client.Close();
                 }
-               
+
             }
             catch (SocketException e)
             {
                 Logger.WriteLog($"SocketException in RecieveAndSendDeviceComs: {e}");
             }
         }
+
+        private void RecieveAndSendDeviceComsDynamic()
+        {
+            try
+            {
+                IPAddress ipAddress = IPAddress.Parse(hostIP);
+                tcpListener = new TcpListener(ipAddress, hostPort);
+                tcpListener.Start();
+                tcpListener.Server.ReceiveTimeout = 1000;
+                tcpListener.Server.SendTimeout = 1000;
+
+                // Buffer for reading data
+                byte[] bytes = new byte[512];
+                string data = null;
+                System.Threading.Thread.Sleep(3000);
+                var stopWatch = new System.Diagnostics.Stopwatch();
+                stopWatch.Start();
+
+                while (true)
+                {
+                    Logger.WriteLog("Waiting for a connection...");
+
+                    if (tcpListener.Pending())
+                    {
+                        TcpClient client = tcpListener.AcceptTcpClient();
+
+                        //if (!client.Connected)
+                        //    break;
+
+                        Logger.WriteLog($"Connectection status : {client.Connected} and data available is :{client.Available}");
+
+                        data = null;
+                        NetworkStream networkStream = client.GetStream();
+                        //specifies the amount of time, in milliseconds, that will elapse before a read operation fails
+                        //If the read operation does not complete within the time specified by this property, the read operation throws an IOException.
+                        networkStream.ReadTimeout = 5000;
+                        int i;
+
+                        Logger.WriteLog("Started reading !");
+                        Logger.WriteLog($"Networkstream data available flag :{networkStream.DataAvailable}");
+                        //get data size
+                        byte[] first4Bytes = new byte[4];
+                        try
+                        {
+                            var dataRead = networkStream.Read(first4Bytes, 0, 4);
+                        }
+                        catch (IOException ioException)
+                        {
+                            Logger.WriteLog($"An IO exception occoured while trying to read the data size : { ioException.StackTrace}");
+                            break;
+                        }
+
+                        if (first4Bytes.Length > 0)
+                        {
+                            if (BitConverter.IsLittleEndian)
+                                Array.Reverse(first4Bytes);
+
+                            int dataSizeToRead = BitConverter.ToInt32(first4Bytes, 0);
+                            Logger.WriteLog($"data size to read int: { dataSizeToRead}");
+
+                            bytes = new byte[dataSizeToRead];
+
+                            i = networkStream.Read(bytes, 0, dataSizeToRead);
+                            Logger.WriteLog($"Data size excluding first 4 bytes: { i}");
+
+                            data = Encoding.ASCII.GetString(bytes, 0, i);
+
+                            //Parse the message
+                            var deviceRequest = ParseDeviceRequestMessage(data);
+
+                            //Build deviceResponseXML
+                            var deviceResponseMessage = BuildDeviceResponse(deviceRequest);
+                            byte[] message = Encoding.ASCII.GetBytes(deviceResponseMessage);
+
+                            // Send back a response.
+                            BinaryWriter binaryWriter = new BinaryWriter(networkStream);
+                            var hosttoAddress = IPAddress.HostToNetworkOrder(message.Length);
+                            binaryWriter.Write(hosttoAddress); //data size
+                            binaryWriter.Write(message);       //actual data
+
+                            Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
+                        }
+                        client.Close();
+                    }
+                    else
+                    {
+                        Logger.WriteLog($"TCP Listener Pending status is :{tcpListener.Pending()}");
+                        if(stopWatch.Elapsed > new TimeSpan(0,0,30))
+                        {
+                            Logger.WriteLog($"You've just wasted {stopWatch.Elapsed } time of my life, so hanging up");
+                            break;
+                        }
+                        else
+                        {
+                            System.Threading.Thread.Sleep(1000);
+                        }
+                    }
+                }
+
+            }
+            catch (SocketException exSoc)
+            {
+                Logger.WriteLog($"SocketException in RecieveAndSendDeviceComsDynamic: {exSoc} , with error code: {exSoc.ErrorCode}");
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLog($"Exception in RecieveAndSendDeviceComsDynamic: {ex}");
+            }
+        }
+
     }
+
     public class DeviceRequest
     {
         public string RequestType { get; set; }
