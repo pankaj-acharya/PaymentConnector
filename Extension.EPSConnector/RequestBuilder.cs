@@ -27,17 +27,48 @@ namespace Hardware.Extension.EPSPaymentConnector
             return cardServiceRequestXML;
         }
 
-        public string BuildRefundPaymentRequest(RefundPaymentTerminalDeviceRequest refundRequest,string workStationId)
+        public string BuildRefundPaymentRequest(RefundPaymentTerminalDeviceRequest refundRequest,string invoiceId,string workStationId)
         {
-            string refundRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"PaymentRefund\" WorkstationID=\"{workStationId}\" RequestID=\"{refundRequest.TransactionReferenceData.UniqueTransactionId}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN> {refundRequest.IsManualEntry} </ManualPAN> </POSdata>   <TotalAmount Currency=\"GBP\"> {refundRequest.Amount} </TotalAmount> </CardServiceRequest>";
+            string refundRequestXML = "";
+            try
+            {
+                refundRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"PaymentRefund\" WorkstationID=\"{workStationId}\" RequestID=\"{invoiceId}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN> false </ManualPAN> </POSdata>   <TotalAmount Currency=\"GBP\"> {refundRequest.Amount} </TotalAmount> </CardServiceRequest>";
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLog($"Exception in BuildRefundPaymentRequest() {ex}");
+            }
+
+            return refundRequestXML;
+        }
+        public string BuildVoidPaymentRequest(VoidPaymentTerminalDeviceRequest voidRequest, string invoiceId, string workStationId)
+        {
+            string refundRequestXML = "";
+            try
+            {
+                refundRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"PaymentRefund\" WorkstationID=\"{workStationId}\" RequestID=\"{invoiceId}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN> false </ManualPAN> </POSdata>   <TotalAmount Currency=\"GBP\"> {voidRequest.Amount} </TotalAmount> </CardServiceRequest>";
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLog($"Exception in BuildVoidPaymentRequest() {ex}");
+            }
 
             return refundRequestXML;
         }
 
         public string BuildCancelPaymentRequest(string workStationId)
         {
-            string customRequestIdForRefund = LastTransactionNumber + "_r";
-            string cancelRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"AbortRequest\" WorkstationID=\"{workStationId}\" RequestID=\"{customRequestIdForRefund}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ClerkID> 123456 </ClerkID> <ManualPAN>False</ManualPAN> <TransactionNumber>{LastTransactionNumber} </TransactionNumber>  </POSdata></CardServiceRequest>";
+            string customRequestIdForCancel = LastTransactionNumber + "89";
+            string customTransactionNumberForCancel = LastTransactionNumber + "12";
+            string cancelRequestXML = $"<?xml version =\"1.0\"?> <CardServiceRequest xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"AbortRequest\" WorkstationID=\"{workStationId}\" RequestID=\"{customRequestIdForCancel}\" ReferenceNumber=\"{LastTransactionNumber}\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\">  <POSdata> <POSTimeStamp>{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")}</POSTimeStamp> <ManualPAN>false</ManualPAN> </POSdata> </CardServiceRequest>";
+            return cancelRequestXML;
+        }
+
+        public string BuildSampleCancelPaymentRequest(string workStationId)
+        {
+            string customRequestIdForCancel = LastTransactionNumber + "89";
+            string customTransactionNumberForCancel = LastTransactionNumber + "12";
+            string cancelRequestXML = $"<? xml version =\"1.0\"?><CardServiceRequest xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns: xsd = \"http://www.w3.org/2001/XMLSchema\" RequestType = \"AbortRequest\" WorkstationID = \"TestPos\" RequestID = \"{customRequestIdForCancel}\" ReferenceNumber = \"{LastTransactionNumber}\" xmlns = \"http://www.nrf-arts.org/IXRetail/namespace\"> < POSdata >< POSTimeStamp > { DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")} </ POSTimeStamp >< ClerkID > 123456 </ ClerkID >< ManualPAN > false </ ManualPAN >< TransactionNumber > TXNNo3 </ TransactionNumber > </ POSdata ></ CardServiceRequest >";
             return cancelRequestXML;
         }
 

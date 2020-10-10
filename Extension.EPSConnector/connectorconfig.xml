@@ -1,5 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Config>
-<EndpointIp>http://127.0.0.1:9900/</EndpointIp>
-<Port>9900</Port>
+  <EndpointIp>127.0.0.1</EndpointIp>
+  <!--Port POS/Payment connector uses to send the message to EPS-->
+  <OutgoingPort>8900</OutgoingPort>
+  <!--Port on which the payment connector listens to for display messages/device request messages.
+  The connector then responds(device response messages) back to EPS on same port.Refer EPS document for more details-->
+  <IncomingPort>9900</IncomingPort>
+  <!--The value in seconds that the connector waits for messagefrom EPS before timing out -->
+  <IncomingPortTimeout>20</IncomingPortTimeout>
 </Config>

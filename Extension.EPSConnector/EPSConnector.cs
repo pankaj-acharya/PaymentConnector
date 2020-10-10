@@ -40,7 +40,7 @@ namespace Hardware.Extension.EPSPaymentConnector
         private const string PaymentTerminalDevice = "GSPAYMENTTERMINAL";
         private const string PaymentDeviceSimulatorFileName = "PaymentDeviceSimulator";
         private const int TaskDelayInMilliSeconds = 10;
-
+        private string invoiceNumberForRefund = "";
         #region File Logger variables
         private const string FILE_EXT = ".log";
         private readonly string datetimeFormat;
@@ -289,7 +289,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
 
             PSDK.PaymentProperty[] merchantProperties = CardPaymentManager.ToLocalProperties(request.PaymentPropertiesXml);
-            PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.VoidPaymentAsync(request.Amount, request.Currency, merchantProperties, request.ExtensionTransactionProperties));
+            PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.VoidPaymentAsync(request,request.Amount, request.Currency, merchantProperties, request.ExtensionTransactionProperties));
 
             return new VoidPaymentTerminalDeviceResponse(paymentInfo);
         }
@@ -508,7 +508,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 if (response != null)
                 {
                     //Parse response and return to the caller
-                    paymentInfo = responseMapper.MapPaymentResponse(response);
+                    paymentInfo = responseMapper.MapPaymentResponse(response,paymentRequest.PaymentConnectorName);
                 }
             }
             catch (Exception ex)
@@ -546,7 +546,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                     info.PaymentConnectorName = paymentConnectorName;
                     info.InvoiceNumber = invoiceNumber;
                     info.IsTestMode = isTestMode;
-
+                    invoiceNumberForRefund = invoiceNumber;
                     FillPaymentProperties(merchantProperties, info);
 
                     string serializedInfo = info.ToString();
@@ -568,21 +568,21 @@ namespace Hardware.Extension.EPSPaymentConnector
         ///  Cancels an existing GetTender or RequestTenderApproval  operation on the payment terminal.
         /// </summary>
         /// <returns>A task that can be awaited until the operation is cancelled.</returns>
-        //public async Task CancelOperationAsync()
-        public void CancelOperationAsync()
+        public async Task CancelOperationAsync()
         {
-            //await Task.Delay(TaskDelayInMilliSeconds);
             Logger.WriteLog("Entered method: CancelOperationAsync");
+            await Task.Delay(TaskDelayInMilliSeconds);
             try
             {
+                //var xmlString = requestBuilder.BuildCancelPaymentRequest(terminalSettings.TerminalId);
                 var xmlString = requestBuilder.BuildCancelPaymentRequest(terminalSettings.TerminalId);
-                Logger.WriteLog($"Raw AuthorizePaymentrequest XML: {xmlString}", true);
+                Logger.WriteLog($"Raw CancelOperation request XML: {xmlString}", true);
 
                 var response = SendRequestTcp(xmlString);
 
                 if (response != null)
                 {
-                    var paymentInfo = responseMapper.MapVoidResponse(response);
+                    var paymentInfo = responseMapper.MapCancelResponse(response);
                     //TODO: does this need to be logged somewhere ?
                 }
             }
@@ -839,15 +839,15 @@ namespace Hardware.Extension.EPSPaymentConnector
                 //    }
                 //}
                 #endregion
-                var xmlString = requestBuilder.BuildRefundPaymentRequest(request, this.terminalSettings.TerminalId);
+                var xmlString = requestBuilder.BuildRefundPaymentRequest(request,invoiceNumberForRefund, "0001");
                 Logger.WriteLog($"Raw Refundrequest XML: {xmlString}");
 
                 var refundResponse = SendRequestTcp(xmlString);
-                var mappedRefundPaymentResponse = responseMapper.MapRefundResponse(refundResponse);
-                return paymentInfo;
+                return responseMapper.MapRefundResponse(refundResponse,this.terminalSettings.TerminalId);
             }
             catch (Exception ex)
             {
+                Logger.WriteLog($"Exception in  RefundPaymentAsync {ex}");
                 var paymentTerminalPipeline = new PaymentTerminalPipeline(string.Format("{0}{1}", PaymentTerminalDevice, PaymentTerminalMessageHandler.Error));
                 paymentTerminalPipeline.SendError(ex.Message);
                 throw;
@@ -894,21 +894,21 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <param name="paymentProperties">The payment properties of the authorization response.</param>
         /// <param name="extensionTransactionProperties">Optional extension transaction properties.</param>
         /// <returns>A task that can await until the void has completed.</returns>
-        public Task<PaymentInfo> VoidPaymentAsync(decimal amount, string currency, PSDK.PaymentProperty[] paymentProperties, ExtensionTransaction extensionTransactionProperties)
+        public Task<PaymentInfo> VoidPaymentAsync(VoidPaymentTerminalDeviceRequest request,decimal amount, string currency, PSDK.PaymentProperty[] paymentProperties, ExtensionTransaction extensionTransactionProperties)
         {
             Logger.WriteLog("Entered method: VoidPaymentAsync");
             try
             {
-                dynamic info = new JObject();
+                //dynamic info = new JObject();
 
-                info.Amount = amount;
-                info.Currency = currency;
-                FillPaymentProperties(paymentProperties, info);
+                //info.Amount = amount;
+                //info.Currency = currency;
+                //FillPaymentProperties(paymentProperties, info);
 
-                string serializedInfo = info.ToString();
-                File.WriteAllText(string.Format(@"{0}\{1}_VoidPayment.json", this.deviceSimFolderPath, PaymentDeviceSimulatorFileName), serializedInfo);
+                //string serializedInfo = info.ToString();
+                //File.WriteAllText(string.Format(@"{0}\{1}_VoidPayment.json", this.deviceSimFolderPath, PaymentDeviceSimulatorFileName), serializedInfo);
 
-                if (amount < this.terminalSettings.MinimumAmountAllowed)
+                if (amount< this.terminalSettings.MinimumAmountAllowed)
                 {
                     throw new CardPaymentException(CardPaymentException.AmountLessThanMinimumLimit, "Amount does not meet minimum amount allowed.");
                 }
@@ -918,21 +918,27 @@ namespace Hardware.Extension.EPSPaymentConnector
                     throw new CardPaymentException(CardPaymentException.AmountExceedsMaximumLimit, "Amount exceeds the maximum amount allowed.");
                 }
 
-                if (this.processor == null)
-                {
-                    this.processor = CardPaymentManager.GetPaymentProcessor(this.merchantProperties, this.paymentConnectorName);
-                }
+                //if (this.processor == null)
+                //{
+                //    this.processor = CardPaymentManager.GetPaymentProcessor(this.merchantProperties, this.paymentConnectorName);
+                //}
 
                 PaymentInfo paymentInfo = new PaymentInfo();
 
                 // Handle multiple chain connectors by returning single instance used in capture.
-                PSDK.IPaymentProcessor currentProcessor = null;
-                PSDK.PaymentProperty[] currentMerchantProperties = null;
-                CardPaymentManager.GetRequiredConnector(this.merchantProperties, paymentProperties, this.processor, out currentProcessor, out currentMerchantProperties);
+                //PSDK.IPaymentProcessor currentProcessor = null;
+                //PSDK.PaymentProperty[] currentMerchantProperties = null;
+                //CardPaymentManager.GetRequiredConnector(this.merchantProperties, paymentProperties, this.processor, out currentProcessor, out currentMerchantProperties);
 
-                PSDK.Request request = CardPaymentManager.GetCaptureRequest(currentMerchantProperties, paymentProperties, amount, currency, this.terminalSettings.Locale, true, this.terminalSettings.TerminalId, cardCache, extensionTransactionProperties);
-                PSDK.Response response = currentProcessor.Void(request);
-                CardPaymentManager.MapVoidResponse(response, paymentInfo);
+                //PSDK.Request request = CardPaymentManager.GetCaptureRequest(currentMerchantProperties, paymentProperties, amount, currency, this.terminalSettings.Locale, true, this.terminalSettings.TerminalId, cardCache, extensionTransactionProperties);
+                //PSDK.Response response = currentProcessor.Void(request);
+                //CardPaymentManager.MapVoidResponse(response, paymentInfo);
+
+                var xmlString = requestBuilder.BuildVoidPaymentRequest(request, invoiceNumberForRefund, this.terminalSettings.TerminalId);
+                Logger.WriteLog($"Raw Refundrequest XML: {xmlString}");
+
+                var voidResponse = SendRequestTcp(xmlString);
+                paymentInfo= responseMapper.MapVoidResponse(voidResponse);
 
                 return Task.FromResult(paymentInfo);
             }
