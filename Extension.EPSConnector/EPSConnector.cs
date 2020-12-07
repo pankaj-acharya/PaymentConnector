@@ -1284,19 +1284,6 @@ namespace Hardware.Extension.EPSPaymentConnector
                 DeviceComsHandler deviceComsHandler = new DeviceComsHandler();
                 deviceComsHandler.DeviceRequestOneHandler();
 
-
-                //4 read device request 9900
-                //5 write<deviceresponse> message on port 9900  with same RequestId from step 4
-                //deviceComsHandler.DeviceRequestTwoHandler();
-
-                //6 read device request on port 9900
-                //7 write<deviceresponse> message on port 9900  with same RequestId from step 6
-                //deviceComsHandler.DeviceRequestThreeHandler();
-
-                //8 read device request on port 9900
-                //9 write<deviceresponse> message on port 9900  with same RequestId from step 9
-                //deviceComsHandler.DeviceRequestFourHandler();
-
                 deviceComsHandler.StopTcpServer();
                 // String to store the response ASCII representation.
                 string responseData = string.Empty;

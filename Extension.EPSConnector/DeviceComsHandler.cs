@@ -43,40 +43,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             //RecieveAndSendDeviceComs();
             RecieveAndSendDeviceComsDynamic();
         }
-
-        public void DeviceRequestTwoHandler()
-        {
-            Logger.WriteLog("Entered method DeviceRequestTwoHandler");
-            RecieveAndSendDeviceComs();
-        }
-        public void DeviceRequestThreeHandler()
-        {
-            Logger.WriteLog("Entered method DeviceRequestThreeHandler");
-            RecieveAndSendDeviceComs();
-
-        }
-        public void DeviceRequestFourHandler()
-        {
-            Logger.WriteLog("Entered method DeviceRequestFourHandler");
-            RecieveAndSendDeviceComs();
-        }
-        public void SplitDeviceRequestMessages(string masterXmlAsString, out string firstRequestXML, out string secondRequestXML, out string thirdRequestXML)
-        {
-            string customSeparator = "</DeviceRequest>";
-
-            int charsToReadFirstXML = masterXmlAsString.IndexOf(customSeparator);
-            charsToReadFirstXML = charsToReadFirstXML + customSeparator.Length;
-            firstRequestXML = masterXmlAsString.Substring(0, charsToReadFirstXML);
-
-            int charsToReadSecondXML = masterXmlAsString.IndexOf(customSeparator, charsToReadFirstXML);
-            charsToReadSecondXML = charsToReadSecondXML + customSeparator.Length;
-            secondRequestXML = masterXmlAsString.Substring(charsToReadFirstXML, (charsToReadSecondXML - charsToReadFirstXML));
-
-            int charsToReadThirdXML = masterXmlAsString.IndexOf(customSeparator, charsToReadSecondXML);
-            charsToReadThirdXML = charsToReadThirdXML + customSeparator.Length;
-            thirdRequestXML = masterXmlAsString.Substring(charsToReadSecondXML, (charsToReadThirdXML - charsToReadSecondXML));
-
-        }
+       
         private DeviceRequest ParseDeviceRequestMessage(string XmlMessage)
         {
             var deviceRequestValues = new DeviceRequest();
@@ -93,6 +60,14 @@ namespace Hardware.Extension.EPSPaymentConnector
                 XmlNodeList outputNode = xmlDoc.GetElementsByTagName("Output");
                 deviceRequestValues.OutDeviceTarget = outputNode[0].Attributes["OutDeviceTarget"].Value;
 
+                if (deviceRequestValues.OutDeviceTarget.ToLower().Equals("printerreceipt"))
+                {
+                    if (outputNode[0].InnerText.ToLower().Contains("cardholderreceipt"))
+                    {
+                        deviceRequestValues.IsCardholderReceipt = true;
+                    }
+                }
+
             }
             catch (Exception ex)
             {
@@ -108,7 +83,6 @@ namespace Hardware.Extension.EPSPaymentConnector
             try
             {
                 deviceResponseXML = $"<?xml version=\"1.0\"?><DeviceResponse xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" RequestType=\"{RequestProperties.RequestType}\" ApplicationSender=\"GSPOS\" RequestID=\"{RequestProperties.RequestID}\" OverallResult=\"Success\" xmlns=\"http://www.nrf-arts.org/IXRetail/namespace\"><Output OutDeviceTarget=\"{RequestProperties.OutDeviceTarget}\" OutResult=\"Success\" /></DeviceResponse>";
-                //Logger.WriteLog(deviceResponseXML);
             }
             catch (Exception ex)
             {
@@ -248,7 +222,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                             Logger.WriteLog($"An IO exception occoured while trying to read the data size : { ioException.StackTrace}");
                             break;
                         }
-
+                        DeviceRequest deviceRequest =new DeviceRequest();
                         if (first4Bytes.Length > 0)
                         {
                             if (BitConverter.IsLittleEndian)
@@ -265,7 +239,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                             data = Encoding.ASCII.GetString(bytes, 0, i);
 
                             //Parse the message
-                            var deviceRequest = ParseDeviceRequestMessage(data);
+                            deviceRequest = ParseDeviceRequestMessage(data);
 
                             //Build deviceResponseXML
                             var deviceResponseMessage = BuildDeviceResponse(deviceRequest);
@@ -280,13 +254,17 @@ namespace Hardware.Extension.EPSPaymentConnector
                             Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
                         }
                         client.Close();
+
+                        if (deviceRequest.IsCardholderReceipt) //Once you have recieved cardholderReceipt , break out and start listening to port 8900
+                            break;
+                        
                     }
                     else
                     {
                         Logger.WriteLog($"TCP Listener Pending status is :{tcpListener.Pending()}");
                         if(stopWatch.Elapsed > new TimeSpan(0,0,30))
                         {
-                            Logger.WriteLog($"You've just wasted {stopWatch.Elapsed } time of my life, so hanging up");
+                            Logger.WriteLog($"Listened for {stopWatch.Elapsed } before hanging up");
                             break;
                         }
                         else
@@ -305,6 +283,11 @@ namespace Hardware.Extension.EPSPaymentConnector
             {
                 Logger.WriteLog($"Exception in RecieveAndSendDeviceComsDynamic: {ex}");
             }
+            finally
+            {
+                Logger.WriteLog($"Stopping tcp listener in finally block");
+                tcpListener.Stop();
+            }
         }
 
     }
@@ -315,5 +298,6 @@ namespace Hardware.Extension.EPSPaymentConnector
         public string ApplicationSender { get; set; }
         public string RequestID { get; set; }
         public string OutDeviceTarget { get; set; }
+        public bool IsCardholderReceipt { get; set; }
     }
 }

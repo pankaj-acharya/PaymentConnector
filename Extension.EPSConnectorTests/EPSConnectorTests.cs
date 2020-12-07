@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Xml;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace Hardware.Extension.EPSPaymentConnector.Tests
 {
@@ -52,6 +54,31 @@ namespace Hardware.Extension.EPSPaymentConnector.Tests
 
             }
             catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        [TestMethod]
+        public void ParseDeviceRequestXML_Returns_IsPrinterReceipt()
+        {
+            try
+            {
+                string XmlMessage = "<?xml version=\"1.0\"?><DeviceRequest xmlns=\"http://www.w3.org/2001/XMLSchema-instance\" RequestType=\"Output\" ApplicationSender=\"GSPOS\" RequestID=\"39\"> <Output OutDeviceTarget=\"PrinterReceipt\" Immediate=\"true\"><TextLine>FIS_TYPE = CardholderReceipt </TextLine><TextLine> APPLICATION_IDENTIFIER = A00000031010 </TextLine ><TextLine> BATCH_ID = 004 </TextLine ><TextLine> ANOTHER_PROPERTY = 123456 </TextLine></Output ></DeviceRequest> ";
+                var xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(XmlMessage);
+
+                XmlNodeList deviceRequestNode = xmlDoc.GetElementsByTagName("DeviceRequest");
+                var requestType = deviceRequestNode[0].Attributes["RequestType"].Value;
+
+                XmlNodeList outputNode = xmlDoc.GetElementsByTagName("Output");
+                var OutDeviceTarget = outputNode[0].Attributes["OutDeviceTarget"].Value;
+
+                var Found = outputNode[0].InnerText.ToLower().Contains("cardholderreceipt");
+
+            }
+            catch (Exception ex)
             {
 
                 throw;
