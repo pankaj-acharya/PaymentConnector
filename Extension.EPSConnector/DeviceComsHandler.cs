@@ -13,7 +13,7 @@ namespace Hardware.Extension.EPSPaymentConnector
     public class DeviceComsHandler
     {
         #region LocalVariables
-
+        //TODO : Move these to config file
         string hostIP = "127.0.0.1";
         int hostPort = 9900;
 
@@ -30,20 +30,19 @@ namespace Hardware.Extension.EPSPaymentConnector
         {
             try
             {
-                //tcpListener.Stop();
+                tcpListener.Stop();
             }
             catch (Exception ex)
             {
                 Logger.WriteLog($"Exception occourded at StopTcpServer(). Message :{ex.InnerException}");
             }
         }
-        public void DeviceRequestOneHandler()
+        public void DeviceRequestHandler()
         {
             Logger.WriteLog("Entered method DeviceRequestOneHandler");
-            //RecieveAndSendDeviceComs();
             RecieveAndSendDeviceComsDynamic();
         }
-       
+
         private DeviceRequest ParseDeviceRequestMessage(string XmlMessage)
         {
             var deviceRequestValues = new DeviceRequest();
@@ -91,86 +90,6 @@ namespace Hardware.Extension.EPSPaymentConnector
 
             return deviceResponseXML;
         }
-        private void RecieveAndSendDeviceComs()
-        {
-            try
-            {
-                IPAddress ipAddress = IPAddress.Parse(hostIP);
-                tcpListener = new TcpListener(ipAddress, hostPort);
-                tcpListener.Start();
-
-                // Buffer for reading data
-                byte[] bytes = new byte[512];
-                string data = null;
-                int numberofCall = 0;
-                // Enter the listening loop.
-                while (numberofCall < 4)
-                {
-                    numberofCall = numberofCall + 1;
-                    Logger.WriteLog("Waiting for a connection...");
-
-                    // Perform a blocking call to accept requests.
-                    // You could also user tcpListener.AcceptSocket() here.
-                    TcpClient client = tcpListener.AcceptTcpClient();
-                    Logger.WriteLog("Connected!");
-
-                    data = null;
-                    NetworkStream networkStream = client.GetStream();
-                    int i;
-
-                    Logger.WriteLog("Started reading !");
-
-                    //BEGIN get data size
-                    byte[] first4Bytes = new byte[4];
-                    var dataRead = networkStream.Read(first4Bytes, 0, 4);
-
-                    // If the system architecture is little-endian (that is, little end first),
-                    // reverse the byte array.
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse(first4Bytes);
-
-                    int dataSizeToRead = BitConverter.ToInt32(first4Bytes, 0);
-                    Logger.WriteLog($"data size to read int: { dataSizeToRead}");
-
-                    bytes = new byte[dataSizeToRead];
-                    //END
-                    //while ((i = networkStream.Read(bytes, 0, bytes.Length)) != 0)
-                    //{
-                    //    data = Encoding.ASCII.GetString(bytes, 4, (i - 4));//ignore the first 4 bytes which is the size of data
-                    //}
-                    i = networkStream.Read(bytes, 0, dataSizeToRead);
-                    Logger.WriteLog($"Data size excluding first 4 bytes: { i}");
-
-                    data = Encoding.ASCII.GetString(bytes, 0, i);
-
-                    //Parse the message
-                    var deviceRequest = ParseDeviceRequestMessage(data);
-
-                    //Build deviceResponseXML
-                    var deviceResponseMessage = BuildDeviceResponse(deviceRequest);
-                    byte[] message = Encoding.ASCII.GetBytes(deviceResponseMessage);
-
-                    // Send back a response.
-                    BinaryWriter binaryWriter = new BinaryWriter(networkStream);
-                    var hosttoAddress = IPAddress.HostToNetworkOrder(message.Length);
-                    binaryWriter.Write(hosttoAddress); //data size
-                    binaryWriter.Write(message);       //actual data
-
-                    //networkStream.Write(message, 0, message.Length);
-
-                    Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
-
-                    // Shutdown and end connection
-                    // networkStream.Close(); //TODO: need to test using this as well?
-                    client.Close();
-                }
-
-            }
-            catch (SocketException e)
-            {
-                Logger.WriteLog($"SocketException in RecieveAndSendDeviceComs: {e}");
-            }
-        }
 
         private void RecieveAndSendDeviceComsDynamic()
         {
@@ -179,6 +98,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 IPAddress ipAddress = IPAddress.Parse(hostIP);
                 tcpListener = new TcpListener(ipAddress, hostPort);
                 tcpListener.Start();
+
                 tcpListener.Server.ReceiveTimeout = 1000;
                 tcpListener.Server.SendTimeout = 1000;
 
@@ -196,9 +116,6 @@ namespace Hardware.Extension.EPSPaymentConnector
                     if (tcpListener.Pending())
                     {
                         TcpClient client = tcpListener.AcceptTcpClient();
-
-                        //if (!client.Connected)
-                        //    break;
 
                         Logger.WriteLog($"Connectection status : {client.Connected} and data available is :{client.Available}");
 
@@ -222,7 +139,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                             Logger.WriteLog($"An IO exception occoured while trying to read the data size : { ioException.StackTrace}");
                             break;
                         }
-                        DeviceRequest deviceRequest =new DeviceRequest();
+                        DeviceRequest deviceRequest = new DeviceRequest();
                         if (first4Bytes.Length > 0)
                         {
                             if (BitConverter.IsLittleEndian)
@@ -253,16 +170,16 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                             Logger.WriteLog($"Sent deviceResponse message: {deviceResponseMessage}");
                         }
-                        client.Close();
 
+                        client.Close();
                         if (deviceRequest.IsCardholderReceipt) //Once you have recieved cardholderReceipt , break out and start listening to port 8900
                             break;
-                        
+
                     }
                     else
                     {
                         Logger.WriteLog($"TCP Listener Pending status is :{tcpListener.Pending()}");
-                        if(stopWatch.Elapsed > new TimeSpan(0,0,30))
+                        if (stopWatch.Elapsed > new TimeSpan(0, 0, 30)) //TODO : move the timeout value  into config
                         {
                             Logger.WriteLog($"Listened for {stopWatch.Elapsed } before hanging up");
                             break;

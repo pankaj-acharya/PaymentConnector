@@ -7,5 +7,5 @@
   The connector then responds(device response messages) back to EPS on same port.Refer EPS document for more details-->
   <IncomingPort>9900</IncomingPort>
   <!--The value in seconds that the connector waits for messagefrom EPS before timing out -->
-  <IncomingPortTimeout>20</IncomingPortTimeout>
+  <IncomingPortTimeout>50</IncomingPortTimeout>
 </Config>

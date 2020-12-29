@@ -35,10 +35,10 @@ namespace Hardware.Extension.EPSPaymentConnector
     /// <c>Simulator</c> manager payment device class.
     /// </summary>
     [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable", Justification = "long running task, so the file system watcher will be disposed when the program ends")]
-    public class EPSConnector : INamedRequestHandler//, IRequestHandler//,IPaymentDevice
+    public class EPSConnector : INamedRequestHandler
     {
-        private const string PaymentTerminalDevice = "GSPAYMENTTERMINAL";
-        private const string PaymentDeviceSimulatorFileName = "PaymentDeviceSimulator";
+        private const string PaymentTerminalDevice = "GSPAYMENTTERMINAL"; //This value comes from FinOps 
+        private const string PaymentDeviceSimulatorFileName = "PaymentDeviceSimulator"; //T
         private const int TaskDelayInMilliSeconds = 10;
         private string invoiceNumberForRefund = "";
         #region File Logger variables
@@ -63,8 +63,6 @@ namespace Hardware.Extension.EPSPaymentConnector
         public EPSConnector()
         {
             Logger.WriteLog("Entered constructor for method: EPSConnector ", true);
-
-            // SocketListener.StartClient();
 
         }
         #endregion
@@ -212,7 +210,6 @@ namespace Hardware.Extension.EPSPaymentConnector
             {
                 PSDK.PaymentProperty[] merchantProperties = CardPaymentManager.ToLocalProperties(request.MerchantInformation);
 
-                //await this.BeginTransactionAsync(merchantProperties, request.PaymentConnectorName, request.InvoiceNumber, request.IsTestMode);
                 await this.BeginTransactionAsync(merchantProperties, request.PaymentConnectorName, request.InvoiceNumber, true);
             }));
         }
@@ -228,7 +225,6 @@ namespace Hardware.Extension.EPSPaymentConnector
             {
                 throw new ArgumentNullException("request");
             }
-            //Utilities.WaitAsyncTask(() => this.UpdateLineItemsAsync(request.TotalAmount, request.TaxAmount, request.DiscountAmount, request.SubTotalAmount, request.Items));
         }
 
         /// <summary>
@@ -244,7 +240,6 @@ namespace Hardware.Extension.EPSPaymentConnector
                 throw new ArgumentNullException("request");
             }
 
-            //PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.AuthorizePaymentAsync(request.Amount, request.Currency, request.VoiceAuthorization, request.IsManualEntry, request.ExtensionTransactionProperties));
             PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.AuthorizePaymentAsync(request));
             return new AuthorizePaymentTerminalDeviceResponse(paymentInfo);
         }
@@ -263,8 +258,8 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
 
             PSDK.PaymentProperty[] merchantProperties = CardPaymentManager.ToLocalProperties(request.PaymentPropertiesXml);
-            //INFO : IN our case EPS does Auth and Capture as part of Authorise call so no need to implement this 
-            //just return a vlid object 
+            //INFO : IN our case EPS does Auth and Capture as part of Authorise call 
+            //so no need to implement below just return a valid object 
             //PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.CapturePaymentAsync(request.Amount, request.Currency, merchantProperties, request.ExtensionTransactionProperties));
 
             PaymentInfo paymentInfo = new PaymentInfo
@@ -289,7 +284,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             }
 
             PSDK.PaymentProperty[] merchantProperties = CardPaymentManager.ToLocalProperties(request.PaymentPropertiesXml);
-            PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.VoidPaymentAsync(request,request.Amount, request.Currency, merchantProperties, request.ExtensionTransactionProperties));
+            PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.VoidPaymentAsync(request, request.Amount, request.Currency, merchantProperties, request.ExtensionTransactionProperties));
 
             return new VoidPaymentTerminalDeviceResponse(paymentInfo);
         }
@@ -307,7 +302,6 @@ namespace Hardware.Extension.EPSPaymentConnector
                 throw new ArgumentNullException("request");
             }
 
-            //PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.RefundPaymentAsync(request.Amount, request.Currency, request.IsManualEntry, request.ExtensionTransactionProperties));
             PaymentInfo paymentInfo = Utilities.WaitAsyncTask(() => this.RefundPaymentAsync(request));
 
             return new RefundPaymentTerminalDeviceResponse(paymentInfo);
@@ -373,7 +367,6 @@ namespace Hardware.Extension.EPSPaymentConnector
                 throw new ArgumentNullException("request");
             }
 
-            // Utilities.WaitAsyncTask(() => this.CancelOperationAsync());
             CancelOperationAsync();
         }
 
@@ -444,71 +437,16 @@ namespace Hardware.Extension.EPSPaymentConnector
             PaymentInfo paymentInfo = new PaymentInfo();
             try
             {
-                #region LegacyCode
-                //dynamic info = new JObject();
-
-                //info.Amount = amount;
-                //info.Currency = currency;
-                //info.VoiceAuthorization = voiceAuthorization;
-                //info.IsManualEntry = isManualEntry;
-
-                //string serializedInfo = info.ToString();
-
-                ///* this.CardSwipeHandler(); */
-
-                //var paymentTerminalPipeline = new PaymentTerminalPipeline(string.Format("{0}{1}", PaymentTerminalDevice, PaymentTerminalMessageHandler.AuthorizationData));
-                //paymentTerminalPipeline.AuthorizePayment(serializedInfo);
-
-                //PaymentInfo paymentInfo = new PaymentInfo();
-
-                //// Get tender
-                //TenderInfo maskedTenderInfo = await this.FetchTenderInfoAsync();
-                //if (maskedTenderInfo == null)
-                //{
-                //    return paymentInfo;
-                //}
-
-                //paymentInfo.CardNumberMasked = Utilities.GetMaskedCardNumber(maskedTenderInfo.CardNumber);
-                //paymentInfo.CashbackAmount = maskedTenderInfo.CashBackAmount;
-                //paymentInfo.CardType = (Microsoft.Dynamics.Commerce.HardwareStation.CardPayment.CardType)maskedTenderInfo.CardTypeId;
-
-                //if (paymentInfo.CashbackAmount > this.terminalSettings.DebitCashbackLimit)
-                //{
-                //    throw new CardPaymentException(CardPaymentException.CashbackAmountExceedsLimit, "Cashback amount exceeds the maximum amount allowed.");
-                //}
-
-                //// Authorize
-                //PSDK.Response response = CardPaymentManager.InvokeAuthorizationCall(this.merchantProperties, this.paymentConnectorName, this.tenderInfo, amount, currency, this.terminalSettings.Locale, true, this.terminalSettings.TerminalId, extensionTransactionProperties);
-
-                //Guid cardStorageKey = Guid.NewGuid();
-                //CardPaymentManager.MapAuthorizeResponse(response, paymentInfo, cardStorageKey, this.terminalSettings.TerminalId);
-
-                //if (paymentInfo.IsApproved)
-                //{
-                //    // Backup credit card number
-                //    TemporaryCardMemoryStorage<string> cardStorage = new TemporaryCardMemoryStorage<string>(DateTime.UtcNow, this.tenderInfo.CardNumber);
-                //    cardStorage.StorageInfo = paymentInfo.PaymentSdkData;
-                //    cardCache.Add(cardStorageKey, cardStorage);
-
-                //    // need signature?
-                //    if (this.terminalSettings.SignatureCaptureMinimumAmount < paymentInfo.ApprovedAmount)
-                //    {
-                //        paymentInfo.SignatureData = await this.RequestTenderApprovalAsync(paymentInfo.ApprovedAmount);
-                //    }
-                //}
-
-                //return paymentInfo;
-                #endregion
                 Logger.WriteLog("Entered method: AuthorizePaymentAsync", true);
-
+                await Task.Delay(TaskDelayInMilliSeconds);
                 string xmlString = requestBuilder.BuildAuthorizePaymentRequest(paymentRequest, this.terminalSettings.TerminalId);
-
+                Logger.WriteLog($"The payment connector name is {paymentRequest.PaymentConnectorName}");
                 Logger.WriteLog($"Raw AuthorizePaymentrequest XML: {xmlString}", true);
                 var response = SendRequestTcp(xmlString);
                 if (response != null)
                 {
                     //Parse response and return to the caller
-                    paymentInfo = responseMapper.MapPaymentResponse(response,paymentRequest.PaymentConnectorName);
+                    paymentInfo = responseMapper.MapPaymentResponse(response, paymentRequest.PaymentConnectorName);
                 }
             }
             catch (Exception ex)
@@ -561,20 +499,19 @@ namespace Hardware.Extension.EPSPaymentConnector
             {
                 Logger.WriteLog("Entered method: CancelOperationAsync");
             }
-            
+
         }
 
         /// <summary>
         ///  Cancels an existing GetTender or RequestTenderApproval  operation on the payment terminal.
         /// </summary>
         /// <returns>A task that can be awaited until the operation is cancelled.</returns>
-        public async Task CancelOperationAsync()
+        public void CancelOperationAsync()
         {
             Logger.WriteLog("Entered method: CancelOperationAsync");
-            await Task.Delay(TaskDelayInMilliSeconds);
+            //await Task.Delay(TaskDelayInMilliSeconds);
             try
             {
-                //var xmlString = requestBuilder.BuildCancelPaymentRequest(terminalSettings.TerminalId);
                 var xmlString = requestBuilder.BuildCancelPaymentRequest(terminalSettings.TerminalId);
                 Logger.WriteLog($"Raw CancelOperation request XML: {xmlString}", true);
 
@@ -583,7 +520,6 @@ namespace Hardware.Extension.EPSPaymentConnector
                 if (response != null)
                 {
                     var paymentInfo = responseMapper.MapCancelResponse(response);
-                    //TODO: does this need to be logged somewhere ?
                 }
             }
             catch (Exception ex)
@@ -779,71 +715,16 @@ namespace Hardware.Extension.EPSPaymentConnector
         public async Task<PaymentInfo> RefundPaymentAsync(RefundPaymentTerminalDeviceRequest request)
         {
             Logger.WriteLog("Entered method: RefundPaymentAsync");
+            await Task.Delay(TaskDelayInMilliSeconds);
             try
             {
                 var paymentInfo = new PaymentInfo();
-                #region Legacy code
-                //dynamic info = new JObject();
 
-                //info.Amount = amount;
-                //info.Currency = currency;
-                //info.IsManualEntry = isManualEntry;
-
-                //string serializedInfo = info.ToString();
-                //File.WriteAllText(string.Format(@"{0}\{1}_RefundPayment.json", this.deviceSimFolderPath, PaymentDeviceSimulatorFileName), serializedInfo);
-
-                //if (amount < this.terminalSettings.MinimumAmountAllowed)
-                //{
-                //    throw new CardPaymentException(CardPaymentException.AmountLessThanMinimumLimit, "Amount does not meet minimum amount allowed.");
-                //}
-
-                //if (this.terminalSettings.MaximumAmountAllowed > 0 && amount > this.terminalSettings.MaximumAmountAllowed)
-                //{
-                //    throw new CardPaymentException(CardPaymentException.AmountExceedsMaximumLimit, "Amount exceeds the maximum amount allowed.");
-                //}
-
-                //if (this.processor == null)
-                //{
-                //    this.processor = CardPaymentManager.GetPaymentProcessor(this.merchantProperties, this.paymentConnectorName);
-                //}
-
-                //PaymentInfo paymentInfo = new PaymentInfo();
-
-                //// Get tender
-                //TenderInfo maskedTenderInfo = await this.FetchTenderInfoAsync();
-                //if (maskedTenderInfo == null)
-                //{
-                //    return paymentInfo;
-                //}
-
-                //paymentInfo.CardNumberMasked = maskedTenderInfo.CardNumber;
-                //paymentInfo.CashbackAmount = maskedTenderInfo.CashBackAmount;
-                //paymentInfo.CardType = (Microsoft.Dynamics.Commerce.HardwareStation.CardPayment.CardType)maskedTenderInfo.CardTypeId;
-
-                //if (paymentInfo.CashbackAmount > this.terminalSettings.DebitCashbackLimit)
-                //{
-                //    throw new CardPaymentException(CardPaymentException.CashbackAmountExceedsLimit, "Cashback amount exceeds the maximum amount allowed.");
-                //}
-
-                //// Refund
-                //PSDK.Response response = CardPaymentManager.ChainedRefundCall(this.merchantProperties, string.Empty, this.tenderInfo, amount, currency, this.terminalSettings.Locale, true, this.terminalSettings.TerminalId, extensionTransactionProperties);
-
-                //CardPaymentManager.MapRefundResponse(response, paymentInfo);
-
-                //if (paymentInfo.IsApproved)
-                //{
-                //    // need signature?
-                //    if (this.terminalSettings.SignatureCaptureMinimumAmount < paymentInfo.ApprovedAmount)
-                //    {
-                //        paymentInfo.SignatureData = await this.RequestTenderApprovalAsync(paymentInfo.ApprovedAmount);
-                //    }
-                //}
-                #endregion
-                var xmlString = requestBuilder.BuildRefundPaymentRequest(request,invoiceNumberForRefund, "0001");
+                var xmlString = requestBuilder.BuildRefundPaymentRequest(request, invoiceNumberForRefund, "0001");
                 Logger.WriteLog($"Raw Refundrequest XML: {xmlString}");
 
                 var refundResponse = SendRequestTcp(xmlString);
-                return responseMapper.MapRefundResponse(refundResponse,this.terminalSettings.TerminalId);
+                return responseMapper.MapRefundResponse(refundResponse, this.terminalSettings.TerminalId);
             }
             catch (Exception ex)
             {
@@ -894,21 +775,13 @@ namespace Hardware.Extension.EPSPaymentConnector
         /// <param name="paymentProperties">The payment properties of the authorization response.</param>
         /// <param name="extensionTransactionProperties">Optional extension transaction properties.</param>
         /// <returns>A task that can await until the void has completed.</returns>
-        public Task<PaymentInfo> VoidPaymentAsync(VoidPaymentTerminalDeviceRequest request,decimal amount, string currency, PSDK.PaymentProperty[] paymentProperties, ExtensionTransaction extensionTransactionProperties)
+        public Task<PaymentInfo> VoidPaymentAsync(VoidPaymentTerminalDeviceRequest request, decimal amount, string currency, PSDK.PaymentProperty[] paymentProperties, ExtensionTransaction extensionTransactionProperties)
         {
             Logger.WriteLog("Entered method: VoidPaymentAsync");
             try
             {
-                //dynamic info = new JObject();
 
-                //info.Amount = amount;
-                //info.Currency = currency;
-                //FillPaymentProperties(paymentProperties, info);
-
-                //string serializedInfo = info.ToString();
-                //File.WriteAllText(string.Format(@"{0}\{1}_VoidPayment.json", this.deviceSimFolderPath, PaymentDeviceSimulatorFileName), serializedInfo);
-
-                if (amount< this.terminalSettings.MinimumAmountAllowed)
+                if (amount < this.terminalSettings.MinimumAmountAllowed)
                 {
                     throw new CardPaymentException(CardPaymentException.AmountLessThanMinimumLimit, "Amount does not meet minimum amount allowed.");
                 }
@@ -918,27 +791,13 @@ namespace Hardware.Extension.EPSPaymentConnector
                     throw new CardPaymentException(CardPaymentException.AmountExceedsMaximumLimit, "Amount exceeds the maximum amount allowed.");
                 }
 
-                //if (this.processor == null)
-                //{
-                //    this.processor = CardPaymentManager.GetPaymentProcessor(this.merchantProperties, this.paymentConnectorName);
-                //}
-
                 PaymentInfo paymentInfo = new PaymentInfo();
-
-                // Handle multiple chain connectors by returning single instance used in capture.
-                //PSDK.IPaymentProcessor currentProcessor = null;
-                //PSDK.PaymentProperty[] currentMerchantProperties = null;
-                //CardPaymentManager.GetRequiredConnector(this.merchantProperties, paymentProperties, this.processor, out currentProcessor, out currentMerchantProperties);
-
-                //PSDK.Request request = CardPaymentManager.GetCaptureRequest(currentMerchantProperties, paymentProperties, amount, currency, this.terminalSettings.Locale, true, this.terminalSettings.TerminalId, cardCache, extensionTransactionProperties);
-                //PSDK.Response response = currentProcessor.Void(request);
-                //CardPaymentManager.MapVoidResponse(response, paymentInfo);
 
                 var xmlString = requestBuilder.BuildVoidPaymentRequest(request, invoiceNumberForRefund, this.terminalSettings.TerminalId);
                 Logger.WriteLog($"Raw Refundrequest XML: {xmlString}");
 
                 var voidResponse = SendRequestTcp(xmlString);
-                paymentInfo= responseMapper.MapVoidResponse(voidResponse);
+                paymentInfo = responseMapper.MapVoidResponse(voidResponse);
 
                 return Task.FromResult(paymentInfo);
             }
@@ -959,8 +818,6 @@ namespace Hardware.Extension.EPSPaymentConnector
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA1801:ReviewUnusedParameters", MessageId = "amount", Justification = "Other devices support the amount for signature approval.")]
         public async Task<string> RequestTenderApprovalAsync(decimal amount)
         {
-            /*this.SignatureCaptureHandler();*/
-
             string signature = await this.GetSignatureData();
 
             // Show processing info here...
@@ -1021,7 +878,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 info.MerchantProperties.Add(merchantInfo);
 
             }
-            
+
         }
 
         private async Task<TenderInfo> FetchTenderInfoAsync()
@@ -1268,28 +1125,27 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                 TcpClient client = new TcpClient(hostname, port);
                 NetworkStream stream = client.GetStream();
+
+
                 BinaryWriter writer = new BinaryWriter(stream);
                 var hosttoAddress = IPAddress.HostToNetworkOrder(data.Length);
 
-                //1 Send CarServiceRequest 8900
+                //1 Send CardServiceRequest 8900
                 writer.Write(hosttoAddress);
                 writer.Write(data);
 
-                //TODO:
-                //Check to see if PED is connected on 8900 .Only if connected go to step 2 
-                //CheckDeviceStatus()
-
                 //2 read device request on port 9900
                 //3 write<deviceresponse> message on port 9900  with same RequestId from step 2
+
                 DeviceComsHandler deviceComsHandler = new DeviceComsHandler();
-                deviceComsHandler.DeviceRequestOneHandler();
+                deviceComsHandler.DeviceRequestHandler();
 
                 deviceComsHandler.StopTcpServer();
-                // String to store the response ASCII representation.
-                string responseData = string.Empty;
-                Logger.WriteLog($"Calling stream.Read in  SendRequestTcp with data");
 
-                //10 Read CardServiceResponse
+                string responseData = string.Empty;
+
+                //4 Read CardServiceResponse
+                Logger.WriteLog($"Calling stream.Read in  SendRequestTcp with data");
                 data = new byte[1024]; //TODO : Make this dynamic
                 int bytes = stream.Read(data, 0, data.Length);
                 responseData = System.Text.Encoding.ASCII.GetString(data, 4, (bytes - 4));
