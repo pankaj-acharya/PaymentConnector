@@ -38,7 +38,8 @@ namespace Hardware.Extension.EPSPaymentConnector
     public class EPSConnector : INamedRequestHandler
     {
         private const string PaymentTerminalDevice = "GSPAYMENTTERMINAL"; //This value comes from FinOps 
-        private const string PaymentDeviceSimulatorFileName = "PaymentDeviceSimulator"; //T
+        private const string PaymentDeviceSimulatorFileName = "PaymentDeviceSimulator"; //
+        private const string ConnectorName = "TestConnector"; // This is the name of connector as configured in FinOps
         private const int TaskDelayInMilliSeconds = 10;
         private string invoiceNumberForRefund = "";
         #region File Logger variables
@@ -440,13 +441,12 @@ namespace Hardware.Extension.EPSPaymentConnector
                 Logger.WriteLog("Entered method: AuthorizePaymentAsync", true);
                 await Task.Delay(TaskDelayInMilliSeconds);
                 string xmlString = requestBuilder.BuildAuthorizePaymentRequest(paymentRequest, this.terminalSettings.TerminalId);
-                Logger.WriteLog($"The payment connector name is {paymentRequest.PaymentConnectorName}");
                 Logger.WriteLog($"Raw AuthorizePaymentrequest XML: {xmlString}", true);
                 var response = SendRequestTcp(xmlString);
                 if (response != null)
                 {
                     //Parse response and return to the caller
-                    paymentInfo = responseMapper.MapPaymentResponse(response, paymentRequest.PaymentConnectorName);
+                    paymentInfo = responseMapper.MapPaymentResponse(response, ConnectorName);
                 }
             }
             catch (Exception ex)
@@ -724,7 +724,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 Logger.WriteLog($"Raw Refundrequest XML: {xmlString}");
 
                 var refundResponse = SendRequestTcp(xmlString);
-                return responseMapper.MapRefundResponse(refundResponse, this.terminalSettings.TerminalId);
+                return responseMapper.MapRefundResponse(refundResponse, ConnectorName);
             }
             catch (Exception ex)
             {
@@ -797,7 +797,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                 Logger.WriteLog($"Raw Refundrequest XML: {xmlString}");
 
                 var voidResponse = SendRequestTcp(xmlString);
-                paymentInfo = responseMapper.MapVoidResponse(voidResponse);
+                paymentInfo = responseMapper.MapVoidResponse(voidResponse, ConnectorName);
 
                 return Task.FromResult(paymentInfo);
             }

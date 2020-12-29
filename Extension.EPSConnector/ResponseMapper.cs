@@ -80,7 +80,7 @@ namespace Hardware.Extension.EPSPaymentConnector
                     ////Building PaymentSdkData v0.1
                     List<PaymentProperty> paymentSdkProperties = new List<PaymentProperty>();
                     //TODO: The connector name should be based on the payment properties sent by POS in initial call and not hardcoded initial
-                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, "TestConnector"));
+                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, paymentConnectorName));
 
                     List<PaymentProperty> paymentSdkAuthorizationProperties = new List<PaymentProperty>();
                     paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.ApprovedAmount, paymentInfo.ApprovedAmount));
@@ -172,17 +172,14 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                     List<PaymentProperty> paymentSdkAuthorizationProperties = new List<PaymentProperty>();
                     paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, RefundResponseProperties.ApprovedAmount, totalAmount));
-                    //paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, RefundResponseProperties.Last4Digits , "4012"));
-                    //paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, RefundResponseProperties.AvailableBalance, 100.00m));
                     paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, RefundResponseProperties.ApprovalCode, approvalCode));
                     paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, RefundResponseProperties.ProviderTransactionId, captureReference));
                     paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, RefundResponseProperties.RefundResult, RefundResult.Success.ToString()));
                     paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, TransactionDataProperties.TerminalId, terminalID));
-                    // paymentSdkAuthorizationProperties.Add(new PaymentProperty(GenericNamespace.AuthorizationResponse, AuthorizationResponseProperties.ExternalReceipt, "<ReceiptData><Receipt Type='Customer'><Line>Line 1 of receipt.</Line><Line>Line 2 of receipt.</Line></Receipt><Receipt Type='Merchant'><Line>Line 1 of receipt.</Line><Line>Line 2 of receipt.</Line> </Receipt></ReceiptData>"));
 
                     List<PaymentProperty> paymentSdkProperties = new List<PaymentProperty>();
                     //TODO: The connector name should be based on the payment properties sent by POS in initial call and not hardcoded initial
-                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, "TestConnector"));
+                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, paymentConnectorName));
                     paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.RefundResponse, AuthorizationResponseProperties.Properties, paymentSdkAuthorizationProperties.ToArray()));
 
                     string paymentSdkData = PaymentProperty.ConvertPropertyArrayToXML(paymentSdkProperties.ToArray());
@@ -219,7 +216,7 @@ namespace Hardware.Extension.EPSPaymentConnector
             return paymentInfo;
         }
 
-        public PaymentInfo MapVoidResponse(string responseStr)
+        public PaymentInfo MapVoidResponse(string responseStr, string paymentConnectorName)
         {
             PaymentInfo paymentInfo = new PaymentInfo
             {
@@ -280,7 +277,7 @@ namespace Hardware.Extension.EPSPaymentConnector
 
                     List<PaymentProperty> paymentSdkProperties = new List<PaymentProperty>();
                     //TODO: The connector name should be based on the payment properties sent by POS in initial call and not hardcoded initial
-                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, "TestConnector"));
+                    paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.Connector, ConnectorProperties.ConnectorName, paymentConnectorName));
                     paymentSdkProperties.Add(new PaymentProperty(GenericNamespace.VoidResponse, AuthorizationResponseProperties.Properties, paymentSdkAuthorizationProperties.ToArray()));
 
                     string paymentSdkData = PaymentProperty.ConvertPropertyArrayToXML(paymentSdkProperties.ToArray());
